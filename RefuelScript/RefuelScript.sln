@@ -1,0 +1,26 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 15
+VisualStudioVersion = 15.0.28010.2026
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RefuelScript", "RefuelScript\RefuelScript.csproj", "{821DD0F0-C911-4E8F-881C-56975C84E858}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "IvyRefuelScrip", "IvyRefuelScrip\IvyRefuelScrip.csproj", "{3A104E99-B5A2-40CE-A3EF-951446A47A15}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|x64 = Debug|x64
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{821DD0F0-C911-4E8F-881C-56975C84E858}.Debug|x64.ActiveCfg = Debug|x64
+		{821DD0F0-C911-4E8F-881C-56975C84E858}.Debug|x64.Build.0 = Debug|x64
+		{3A104E99-B5A2-40CE-A3EF-951446A47A15}.Debug|x64.ActiveCfg = Debug|x64
+		{3A104E99-B5A2-40CE-A3EF-951446A47A15}.Debug|x64.Build.0 = Debug|x64
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {1DF64D2F-2DD4-43C1-8790-8300F31D0FC9}
+	EndGlobalSection
+EndGlobal
