@@ -21,7 +21,6 @@ namespace IngameScript
     partial class Program : MyGridProgram
     {
 
-
         //  Declarations:
         //  Scan grid for blocks named[Main Line], [Big Inlet], [Big outlet], [Small Inlet], [Small Outlet], [Big Tank], [Small Tank]. Each PB will have a seperate cargo for transaction, [Small Transaction]; [Large Transaction].
         //  use a central container named[Bank] for storing credits after transaction 
@@ -35,8 +34,7 @@ namespace IngameScript
 
         private bool _TRANSACTION_ALLOWED = false;
         
-        string _State = string.Empty;
-
+        string _State = string.Empty; 
         public Program()
         {
             //maybe change this to 10?
