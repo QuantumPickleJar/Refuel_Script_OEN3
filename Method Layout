@@ -1,0 +1,141 @@
+ public string ML = "[Main Line]";  // NAME OF MAIN LINE CONNECTOR AKA Prime Tank Fill
+    public string PO = "[Prime Outlet]": // NAME OF Prime tank Outlet
+    public string BI = "[Big Inlet]";  // NAME OF BIG INLET CONNECTOR Large Fuel Tank Inlet
+    public string BO = "[Big Outlet]"; // NAME OF BIG OUTLET CONNECTOR Large Fuel Tank Outlet
+    public string SI = "[Small Inlet]"; // NAME OF SMALL OUTLET CONNECTOR Small Fuel Tank Inlet
+    public string SO = "[Small Outlet]"; // NAME OF SMALL INLET CONNECTOR Small Fuel Tank Outlet
+    public string BT = "[Big Tank]";  // NAME OF LARGE HYDRO SALE TANK
+    public string ST = "[Small Tank]"; // NAME OF SMALL HYDRO SALE TANK
+    public string PT = "[PRIME TANK]"; // NAME OF PRIME TANK
+    public string SFI = "[Small Fuel Inlet]"; // Name of Small Fuel Port Inlet Connector
+    public string LFI = "[Large Fuel Inlet]"; // Name of Large Fuel Port Inlet Connector
+    public string LCDDEBUG = "LCD [DEBUG]";
+    public string LCDSS = "LCD [SMALL SALE]";
+    public string LCDLS = "LCD [LARGE SALE]";
+    public string PTSTAT = "LCD [PRIME TANK STATUS]";
+    public string TRANS = "[Transaction]";
+    public string Bank = "[Bank]";
+    public bool debug = false;
+    public bool passive = false;
+    public bool primed = false;
+    public bool sale = false;
+    public bool smalltank = true;
+    public bool setup = false;
+
+   
+public void Setup()
+        {
+    List<IMyGasTank> myTanks = new List<IMyGasTank>();
+    List<IMyShipConnector> myConnectors = new List<IMyShipConnector>();
+    List<IMyCargoContainer> myCargoContainers = new List<IMyCargoContainer>();
+
+    GridTerminalSystem.GetBlocksOfType<IMyGasTank>(myTanks);
+    GridTerminalSystem.GetBlocksOfType<IMyShipConnector>(myConnectors);
+    GridTerminalSystem.GetBlocksOfType<IMyCargoContainer>(myCargoContainers);
+    GridTerminalSystem.GetBlocksOfType<IMyCargoContainer>(myCargoContainers);
+
+
+    //check for each name
+
+    //Hydrogen tanks
+    IMyGasTank BigTankF = GridTerminalSystem.GetBlockWithName(BT) as IMyGasTank;  //[Big Tank]
+    IMyGasTank SmallTankF = GridTerminalSystem.GetBlockWithName(ST) as IMyGasTank;    // [SMALL TANK]
+    IMyGasTank PrimeTankF = GridTerminalSystem.GetBlockWithName(PT) as IMyGasTank;    // Prime Tank
+                                                                                                //Connectors 
+    IMyShipConnector conPTFill = GridTerminalSystem.GetBlockWithName(ML) as IMyShipConnector; //Prime Tank Fill Connector
+    IMyShipConnector conPO = GridTerminalSystem.GetBlockWithName(BO) as IMyShipConnector; // Prime Tank Outlet Connector
+    IMyShipConnector conFTI = GridTerminalSystem.GetBlockWithName(SI) as IMyShipConnector;  // Small Fuel Tank Inlet
+    IMyShipConnector conFTI = GridTerminalSystem.GetBlockWithName(BI) as IMyShipConnector;  // Large Fuel Tank Inlet
+    IMyShipConnector conFO = GridTerminalSystem.GetBlockWithName(SO) as IMyShipConnector; // Small Fuel Tank Outlet
+    IMyShipConnector conFO = GridTerminalSystem.GetBlockWithName(BO) as IMyShipConnector; // Big Fuel Tank Outlet
+    IMyShipConnector conFP = GridTerminalSystem.GetBlockWithName(SFI) as IMyShipConnector;  //Small Fuel Port Inlet
+    IMyShipConnector conFP = GridTerminalSystem.GetBlockWithName(LFI) as IMyShipConnector;  //Large Fuel Port Inlet
+    IMyShipConnector confpi = IMyGridTerminalSystem.GetBlockWithName("Connector [Fuel Port Inlet]");
+    
+    //Cargo containers
+    IMyCargoContainer pB = GridTerminalSystem.GetBlockWithName("Bank Box") as IMyCargoContainer;
+    IMyCargoContainer bank = GridTerminalSystem.GetBlockWithName("Payment Box") as IMyCargoContainer;
+
+    //debug, fueling, primetankstatus
+
+    IMyTextPanel debugLCD = GridTerminalSystem.GetBlockWithName("debug LCD") as IMyTextPanel;
+    IMyTextPanel LCDSFuel = GridTerminalSystem.GetBlockWithName("fuel LCD") as IMyTextPanel;   //LCD Small Fuel
+    IMyTextPanel LCDLFuel = GridTerminalSystem.GetBlockWithName("fuel LCD") as IMyTextPanel;   // LCD Large Fuel
+    IMyTextPanel primeTankLCD = GridTerminalSystem.GetBlockWithName("PrimeTank LCD") as IMyTextPanel;
+
+        // SETUP ALL CONNECTORS TO DISCONNECT!!! NO STEALING FUEL!!!
+
+        conPTFill.Disconnect();
+        conPO.Disconnect();
+        conFTI.Disconnect();
+        conFO.Disconnect();
+        conFP.Disconnect();
+        confpi.Disconnect();
+
+        // SETUP ALL TANKS TO NOT STOCKPILE!!! NO STEALING FUEL
+
+        PrimeTankF.Stockpile = false;
+        SmallTankF.Stockpile = false;
+        BigTankF.Stockpile = false;
+
+        setup = true;
+}
+
+public void Checks()
+    {
+        if (PrimeTankF.)
+    }
+
+public void Connection()
+{
+
+}
+
+public void Disconnect()
+{
+
+}
+
+public void Passive()   //First Check state of Connectors, Then if any are wrong reset connectors. 
+{
+        if (PrimeTankF.filledvalue < 1)
+        {
+            pt.stockpile = true;
+            conPTFill.Connect();
+            Checks();
+            LCDSFuel.writeto("Status: Filling Prime Tank Please wait!");
+            LCDLFuel.writeto("Status: Filling Prime Tank Please wait!");
+
+        }
+
+        else if ((PrimeTankF.filledvalue == 1)
+        {
+            conPTFill.Disconnect();
+            LCDSFuel.writeto("Status: Filling Prime Tank Please wait!");
+            LCDLFuel.writeto("Status: Filling Prime Tank Please wait!");
+            Checks();
+
+        }
+        
+}
+
+public void Primed()
+{
+
+}
+
+public void Sale()
+{
+
+}
+
+public void UpdateLCD()
+    {
+
+    }
+
+public void Main(string argument, UpdateType updateSource)
+        {
+    if (!setup) Setup();
+
+        }
