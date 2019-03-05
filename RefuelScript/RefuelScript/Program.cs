@@ -45,8 +45,9 @@ namespace IngameScript
         public bool smalltank = true;
         public bool setup = false;
 
-        private decimal = ;
-        private int _PRICE = 0.22; //defauilt price.
+        private double processingFee = 0.05;
+        private double icePrice = 0.05;
+        private double _PRICE = 0.22; //defauilt price.
 
         // GTH ICE COST = 0.227
         // Processing fee = 
@@ -66,16 +67,16 @@ namespace IngameScript
          *          
          *          (capacity == 0 || capacity >= 0 && 'timer elapsed')
          */
+            List<IMyGasTank> myTanks = new List<IMyGasTank>();
+            List<IMyShipConnector> myConnectors = new List<IMyShipConnector>();
+            List<IMyCargoContainer> myCargoContainers = new List<IMyCargoContainer>();
+
 
         //renamed from Setup; constructor to conform with PB syntax
         public Program()
         {
 
             //Instantiate variables 
-
-            List<IMyGasTank> myTanks = new List<IMyGasTank>();
-            List<IMyShipConnector> myConnectors = new List<IMyShipConnector>();
-            List<IMyCargoContainer> myCargoContainers = new List<IMyCargoContainer>();
 
             GridTerminalSystem.GetBlocksOfType<IMyGasTank>(myTanks);
             GridTerminalSystem.GetBlocksOfType<IMyShipConnector>(myConnectors);
@@ -106,33 +107,6 @@ namespace IngameScript
             IMyTextPanel LCDSmFuel = GridTerminalSystem.GetBlockWithName("S fuel LCD") as IMyTextPanel;          //LCD Small Fuel
             IMyTextPanel LCDLgFuel = GridTerminalSystem.GetBlockWithName("L fuel LCD") as IMyTextPanel;          // LCD Large Fuel
             
-            // SETUP ALL CONNECTORS TO DISCONNECT!!! NO STEALING FUEL!!!
-
-            // DO NOT WORRY ABOUT STEALING FUEL UNTIL WE GET THE SYSTEM PUMPING FUEL INTO SHIPS
-
-            foreach (IMyShipConnector connector in myConnectors)
-            {
-                //would powering off the connector be more certain to prevent unwanted connections?
-                connector.Disconnect();
-            }
-
-            // replaced by the above loop
-            /*
-                conPrimeTankFill.Disconnect();
-                conPrimeTankOutlet.Disconnect();
-                conFTI.Disconnect();
-                conFO.Disconnect();
-                conFP.Disconnect();
-                confpi.Disconnect();
-            */
-
-
-            // SETUP ALL TANKS TO NOT STOCKPILE!!! NO STEALING FUEL
-            foreach (IMyGasTank hydrogenTank in myTanks)
-            {
-                hydrogenTank.Stockpile = false;
-            }
-            setup = true;  //is this supposed to be an indicator that the setup ran successfully?  if so, we should rename this. 
         }
 
         /// <summary>
@@ -145,13 +119,30 @@ namespace IngameScript
             //probably use an if() or a case switch to figure out which state we're supposed to be in
             //we'll still need a default thing. 
 
-            
 
-            //handle updating of gas prices 
-            if(debug
+            //setup 
+            foreach (IMyShipConnector connector in myConnectors)
+            {
+                //would powering off the connector be more certain to prevent unwanted connections?
+                connector.Disconnect();
+            }
+
+            // SETUP ALL TANKS TO NOT STOCKPILE!!! NO STEALING FUEL
+            foreach (IMyGasTank hydrogenTank in myTanks)
+            {
+                hydrogenTank.Stockpile = false;
+            }
+            setup = true;  //is this supposed to be an indicator that the setup ran successfully?  if so, we should rename this. 
+
+
+            //
+
+
+            //handle updating of prices 
+
 
             // 250,000 units of hydrogen per Large Tank
-            
+
         }
 
 
@@ -165,7 +156,10 @@ namespace IngameScript
 
         }
 
-        private void UpdateProcessingFee(decimal )
+        private void UpdateProcessingFee(decimal newFee)
+        {
+            //this.
+        }
 
 
         /// <summary>
@@ -242,13 +236,7 @@ namespace IngameScript
              *
              *  if(small tank vol > 0L || time elapses && small tank vol >= 0L 
              *      return to passive state
-             *
-             *
-             *
-             *
-             *
              */
-
 
 
             /**
