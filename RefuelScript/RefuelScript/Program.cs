@@ -49,20 +49,20 @@ namespace IngameScript
         private int _PRICE = 0.22; //defauilt price.
 
         // GTH ICE COST = 0.227
-        // Processing fee = 
+        // Processing fee = 1.05
 
         /**
          * Top connectors are set to SHARE WITH ALL. connect through bridge connector. 
          * INlet to tank, outlet to the customer's ship. 
-         *      opened after Sale state completed;
+         *      Outlet opened after Sale state completed;
          *      
          *      think of main line as 'the rest of their base'
          *      
          *      
-         *      main line is OFF unless we're refilling the prime tank?
+         *      main line is OFF unless we're refilling the Transaction tank? YES
          *      
-         *      Inlet for specified tank turns ON when the OUTLET is turned OFF
-         *          determined by when tank reaches 0% OR Timer reach zero.
+         *      Inlet for specified tank turns ON ONLY when the OUTLET is turned OFF FIRST
+         *          determined by when tank reaches 0% OR Tank > 0% & Timer reach zero.
          *          
          *          (capacity == 0 || capacity >= 0 && 'timer elapsed')
          */
