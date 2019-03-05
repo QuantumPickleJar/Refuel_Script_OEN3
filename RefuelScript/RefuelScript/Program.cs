@@ -50,20 +50,20 @@ namespace IngameScript
         private double _PRICE = 0.22; //defauilt price.
 
         // GTH ICE COST = 0.227
-        // Processing fee = 
+        // Processing fee = 1.05
 
         /**
          * Top connectors are set to SHARE WITH ALL. connect through bridge connector. 
          * INlet to tank, outlet to the customer's ship. 
-         *      opened after Sale state completed;
+         *      Outlet opened after Sale state completed;
          *      
          *      think of main line as 'the rest of their base'
          *      
          *      
-         *      main line is OFF unless we're refilling the prime tank?
+         *      main line is OFF unless we're refilling the Transaction tank? YES
          *      
-         *      Inlet for specified tank turns ON when the OUTLET is turned OFF
-         *          determined by when tank reaches 0% OR Timer reach zero.
+         *      Inlet for specified tank turns ON ONLY when the OUTLET is turned OFF FIRST
+         *          determined by when tank reaches 0% OR Tank > 0% & Timer reach zero.
          *          
          *          (capacity == 0 || capacity >= 0 && 'timer elapsed')
          */
@@ -174,9 +174,9 @@ namespace IngameScript
                  *  small outlet OFF
                  *  small inelt ON
                  *  main line ON
-                 *  System will NOT ALLOW Prime State (second state) until given tank is full.  ("given tank" being the one on the gas station.  Not the customer.)
-                 *  use method to check percentage of tank to ensure transactions ar efull
-                 *  after tank is full, turn Small tank stockpile OFF
+                 *  System will NOT ALLOW Prime State (second state) until Transaction Tank (Large or Small for Refueling)
+                 *  use method to check percentage of tank to ensure transactions are full
+                 *  after tank is full, turn Transaction Tank stockpile OFF
                  *  turn small inlet off
                  *  small outlet STILL off
                  *  after all of that, transfer to PRIME STATE
@@ -231,8 +231,9 @@ namespace IngameScript
              *  pulls credits inside box into BANK, leaving remaining balance in small transaction box
              * 
              *  small outlet turns ON
-             *  small inlet OFF from primed 
-             *  transacation continues until small tank reads 0L and returns to passive state
+             *  small inlet OFF (Still OFF from Primed State)
+             *  transacation continues until transaction tank reaches 0% OR Tank > 0% & Timer reach zero.
+             *  After Transaction, System returns to Passive State.
              *
              *  if(small tank vol > 0L || time elapses && small tank vol >= 0L 
              *      return to passive state
@@ -240,27 +241,10 @@ namespace IngameScript
 
 
             /**
-             * transaction wil not occur if credits in small transaction box is LESS THAN transacation cost
-                    when this IS true, move to SALES STATE
+             * transaction will not occur if credits in small transaction box is LESS THAN transacation cost
+                    when this IS true, move to SALES STATE (Pulls Credits from Transaction Cargo, into [Bank], Prevents Thievery)
                     at the beginning of this method, run an extra check to verify once again 
 
-             * check that there is a ship to refuel at the connector
-             *  loop until we see one
-             *  
-             * when we see one, update LCD screen 
-             *  "would you like to purchase fuel? current price: ..."
-             *  
-             *  wait to receive EXACT credits from DepositBox
-             *  
-             *  connect ship
-             *  
-             *  disconnect prime tank from Fuel tank
-             *  
-             *  connect fuel tank to fuel nozzle
-             *  
-             *  Remain in sale state until...
-             *  if 
-             *  
              */
         }
 
