@@ -21,93 +21,156 @@ namespace IngameScript
     partial class Program : MyGridProgram
     {
 
-        //  Declarations:
-        //  Scan grid for blocks named[Main Line], [Big Inlet], [Big outlet], [Small Inlet], [Small Outlet], [Big Tank], [Small Tank]. Each PB will have a seperate cargo for transaction, [Small Transaction]; [Large Transaction].
-        //  use a central container named[Bank] for storing credits after transaction 
-        // ## are we using physical credits?
+        public const string ML = "[Main Line]";  // NAME OF MAIN LINE CONNECTOR (Default: "Prime Tank Fill")
+        public const string PO = "[Prime Outlet]"; // NAME OF Prime tank Outlet
+        public const string BI = "[Big Inlet]";  // NAME OF BIG INLET CONNECTOR Large Fuel Tank Inlet
+        public const string BO = "[Big Outlet]"; // NAME OF BIG OUTLET CONNECTOR Large Fuel Tank Outlet
+        public const string SI = "[Small Inlet]"; // NAME OF SMALL OUTLET CONNECTOR Small Fuel Tank Inlet
+        public const string SO = "[Small Outlet]"; // NAME OF SMALL INLET CONNECTOR Small Fuel Tank Outlet
+        public const string BT = "[Big Tank]";  // NAME OF LARGE HYD SALE TANK
+        public const string ST = "[Small Tank]"; // NAME OF SMALL HYD SALE TANK
+        public const string PT = "[PRIME TANK]"; // NAME OF PRIME TANK
+        public const string SFI = "[Small Fuel Inlet]"; // Name of Small Fuel Port Inlet Connector
+        public const string LFI = "[Large Fuel Inlet]"; // Name of Large Fuel Port Inlet Connector
+        public const string LCDDEBUG = "LCD [DEBUG]";
+        public const string LCDSS = "LCD [SMALL SALE]";
+        public const string LCDLS = "LCD [LARGE SALE]";
+        public const string PTSTAT = "LCD [PRIME TANK STATUS]";
+        public const string TRANS = "[Transaction]";
+        public const string Bank = "[Bank]";
+        public bool debug = false;
+        public bool passive = false;
+        public bool primed = false;
+        public bool sale = false;
+        public bool smalltank = true;
+        public bool setup = false;
 
-            /// <summary>
-            /// Property FuelPrice (set with _fuelPrice)
-            /// </summary>
-        private float _fuelPrice;
-        public float FuelPrice { get { return this._fuelPrice; } private set { this._fuelPrice = value; } }
 
-        private bool _TRANSACTION_ALLOWED = false;
-        
-        string _State = string.Empty; 
-        public Program()
+        public void Setup()
         {
-            //maybe change this to 10?
-            // code involving transactions should probably be here since this is called before the Main() method
-            Runtime.UpdateFrequency = UpdateFrequency.Update100;
+            List<IMyGasTank> myTanks = new List<IMyGasTank>();
+            List<IMyShipConnector> myConnectors = new List<IMyShipConnector>();
+            List<IMyCargoContainer> myCargoContainers = new List<IMyCargoContainer>();
+
+            GridTerminalSystem.GetBlocksOfType<IMyGasTank>(myTanks);
+            GridTerminalSystem.GetBlocksOfType<IMyShipConnector>(myConnectors);
+            GridTerminalSystem.GetBlocksOfType<IMyCargoContainer>(myCargoContainers);
+
+            //check for each name
+
+            //Hydrogen tanks
+            IMyGasTank tankBig = GridTerminalSystem.GetBlockWithName(BT) as IMyGasTank;      //[Big Tank]
+            IMyGasTank tankSmall = GridTerminalSystem.GetBlockWithName(ST) as IMyGasTank;    // [SMALL TANK]
+            IMyGasTank tankPrime = GridTerminalSystem.GetBlockWithName(PT) as IMyGasTank;    // Prime Tank
+
+            //Connectors 
+            IMyShipConnector conPrimeTankFill = GridTerminalSystem.GetBlockWithName(ML) as IMyShipConnector;       //Prime Tank Fill Connector
+            IMyShipConnector conPrimeTankOutlet = GridTerminalSystem.GetBlockWithName(BO) as IMyShipConnector;     // Prime Tank Outlet Connector
+            IMyShipConnector conSmallFuelTankInlet = GridTerminalSystem.GetBlockWithName(SI) as IMyShipConnector;  // Small Fuel Tank Inlet
+            IMyShipConnector conLargeFuelTankInlet = GridTerminalSystem.GetBlockWithName(BI) as IMyShipConnector;  // Large Fuel Tank Inlet
+            IMyShipConnector conSmallFuelTankOutlet = GridTerminalSystem.GetBlockWithName(SO) as IMyShipConnector; // Small Fuel Tank Outlet
+            IMyShipConnector conLargeFuelTankOutlet = GridTerminalSystem.GetBlockWithName(BO) as IMyShipConnector; // Big Fuel Tank Outlet
+            IMyShipConnector conSmallFuelPortInlet = GridTerminalSystem.GetBlockWithName(SFI) as IMyShipConnector; // Small Fuel Port Inlet
+            IMyShipConnector conLargeFuelPortInlet = GridTerminalSystem.GetBlockWithName(LFI) as IMyShipConnector; // Large Fuel Port Inlet
+            IMyShipConnector conCustomerFuelPort = GridTerminalSystem.GetBlockWithName("Connector [Fuel Port Inlet]") as IMyShipConnector;
+
+            //Cargo containers
+            IMyCargoContainer cargoBankBox = GridTerminalSystem.GetBlockWithName("Bank Box") as IMyCargoContainer;
+            IMyCargoContainer cargoPaymentBox = GridTerminalSystem.GetBlockWithName("Payment Box") as IMyCargoContainer;
+
+            //debug, fueling, primetankstatus
+
+            IMyTextPanel debugLCD = GridTerminalSystem.GetBlockWithName("debug LCD") as IMyTextPanel;
+            IMyTextPanel LCDSFuel = GridTerminalSystem.GetBlockWithName("S fuel LCD") as IMyTextPanel;   //LCD Small Fuel
+            IMyTextPanel LCDLFuel = GridTerminalSystem.GetBlockWithName("L fuel LCD") as IMyTextPanel;   // LCD Large Fuel
+            IMyTextPanel primeTankLCD = GridTerminalSystem.GetBlockWithName("PrimeTank LCD") as IMyTextPanel;
+
+            // SETUP ALL CONNECTORS TO DISCONNECT!!! NO STEALING FUEL!!!
+
+            foreach (IMyShipConnector connector in myConnectors)
+            {
+                //would powering off the connector be more certain to prevent unwanted connections?
+                connector.Disconnect();
+            }
+
+            // replaced by the above loop
+            /*
+                conPrimeTankFill.Disconnect();
+                conPrimeTankOutlet.Disconnect();
+                conFTI.Disconnect();
+                conFO.Disconnect();
+                conFP.Disconnect();
+                confpi.Disconnect();
+            */
+
+            // SETUP ALL TANKS TO NOT STOCKPILE!!! NO STEALING FUEL
+            foreach (IMyGasTank hydrogenTank in myTanks)
+            {
+                hydrogenTank.Stockpile = false;
+            }
+            setup = true;  //is this supposed to be an indicator that the setup ran successfully?  if so, we should rename this. 
+        }
+
+        public void Checks()
+        {
+            //figure out what we're checking 
+        }
+
+        public void Connection()
+        {
+            //I don't know if we need 
+        }
+
+        public void Disconnect()
+        {
 
         }
 
-        public void Save()
+        public void Passive()   //First Check state of Connectors, Then if any are wrong reset connectors. 
         {
             //
+            if (tankPrime.filledvalue < 1)
+            {
+                pt.stockpile = true;
+                conPTFill.Connect();
+                Checks();
+                LCDSFuel.writeto("Status: Filling Prime Tank Please wait!");
+                LCDLFuel.writeto("Status: Filling Prime Tank Please wait!");
 
-            // Called when the program needs to save its state. Use
-            // this method to save your state to the Storage field
-            // or some other means. 
-            // 
-            // This method is optional and can be removed if not
-            // needed.
+            }
+
+            else if ((PrimeTankF.filledvalue == 1)
+            {
+                conPTFill.Disconnect();
+                LCDSFuel.writeto("Status: Filling Prime Tank Please wait!");
+                LCDLFuel.writeto("Status: Filling Prime Tank Please wait!");
+                Checks();
+
+            }
+
+        }
+
+        public void Primed()
+        {
+
+        }
+
+        public void Sale()
+        {
+
+        }
+
+        public void UpdateLCD()
+        {
+
         }
 
         public void Main(string argument, UpdateType updateSource)
         {
-
-            //[[[[[[[[[[[[[[[[[[[[[ DECLARATIONS ]]]]]]]]]]]]]]]]]]]]]]]]]
-
-            // scan for blocks named:
-            // [Main Line], [Big Inlet], [Big outlet], [Small Inlet], [Small Outlet], [Big Tank], [Small Tank],[TB - Timeout]
-            // [System Boot] for sensor to boot PB when Player arrives station.
-            // Boot sequence begins Timer[TB - Timeout]; 
-
-
-            // After 1 hour if NoPlayer detected, system shuts down both PB's [Small PB], [Large PB] and sets [Main Line] OFF. [Small Actuator] and [Large Actuator] labels to define the sensor or button to activate Sale State.
-            // 
-            // 
-            //IMyCubeGrid refuel_station = new IMyCubeGrid();
-
-            //finish later 
-            //IMyProgrammableBlock smPB;
-            //smPB = GridTerminalSystem.GetBlockWithName("[Small PB]");
-
-            // Passive State:
-            // [Small Tank] -> stockpile ON;
-            // [Small Outlet] enabled -> OFF; 
-            // [Small Inlet] enabled -> ON;
-            // [Main Line] emnabled -> ON;
-
-            // System will NOT allow Primed State unless Given Tank is full.
-            // ## what is Given Tank, the tank of a connected ship we're refuellng?  if so, which tank?
-            // ## might need a for-each loop in that case 
-
-            // Uses a method to check on the percentage of tank to ensure transactions are disabled;
-            // ## why can't we just use an if()?
-
-            // [Small Tank] is full = 100 %;
-            // After tank is full, 
-            // if([Small Tank].stored = 100]turns[Small Tank] Stockpile: OFF; Turn[Small Inlet] OFF, ([Small Outlet] is still OFF) Transferring to Primed State.
-
-            ////if (IMyGasTank is full)
-            //{
-            //    //turn smTank.stockpile OFF; 
-            //}
-
-
-            //Primed State:
-            //Need System that has a easily modifiable variable integer for Transaction Cost after system is in Primed State. Credit placed in [Small Transaction] need to meet Transaction Cost in order for transaction to occur.The remaining credit must not be pulled into the bank after transaction. Transaction Cost must be able to accumulate in separate stacks of Credit. LCD API must have Transaction Cost constant string, as well as total of Credit added into[Small Transaction Cargo]. Transaction will not occur if [Small Transaction] is < Transaction Cost. Once met, system Transfers to Sale State
-            //only allow this variable to be changed 
-            //Sale State:
-            //Once Transaction Cost is met, or gone over cost and player presses button panel or sensor activates the transaction: pull Transaction Cost into Bank and leave remaining balance in [Small Transaction]. [Small Outlet] = ON(Small Inlet still disabled from Priming State).Transaction continues until [Small Tank] Reads 0% volume return to Passive State.If[Small Tank] reads Volume > 0% for more than 10-15 minutes return to Passive State.
-            //----
-
-
-
+            if (!setup) Setup();
 
         }
+
     }
+}
 }
