@@ -1,0 +1,22 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 15
+VisualStudioVersion = 15.0.28010.2026
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NDSInventory", "NDSInventory\NDSInventory.csproj", "{1A0792A8-22AB-4265-B229-55D0C3B499E2}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|x64 = Debug|x64
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{1A0792A8-22AB-4265-B229-55D0C3B499E2}.Debug|x64.ActiveCfg = Debug|x64
+		{1A0792A8-22AB-4265-B229-55D0C3B499E2}.Debug|x64.Build.0 = Debug|x64
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {64C8D12D-D2F8-4A86-89EC-15BF2C166261}
+	EndGlobalSection
+EndGlobal
