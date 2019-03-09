@@ -210,6 +210,7 @@ namespace IngameScript
 
         //Assemblers
         public MyAssemblerMode asMd = MyAssemblerMode.Assembly, dsMd = MyAssemblerMode.Disassembly;
+
         public Random rnd = new Random();
         public IMyGridTerminalSystem gSys;
         public IMyCubeGrid Grid;
@@ -218,15 +219,28 @@ namespace IngameScript
         {
             Runtime.UpdateFrequency = UpdateFrequency.Update1; gSys = GridTerminalSystem; Grid = Me.CubeGrid; FillDict(); LoadData(); Save();
         }
+
         public void Save() { }
+
+        //======================    MAIN METHOD    ===============================//
+        
         public void Main(string argument, UpdateType updateSource)
         {
-            tickStartTime = DateTime.Now; int itSg = sM; outIdList.Clear(); otDtLst.Clear(); scnG = false; try { if (argument != "") Cmds(argument); }
+            tickStartTime = DateTime.Now;
+            int itSg = sM;
+            outIdList.Clear();
+            otDtLst.Clear();
+            scnG = false; //scan grid?
+            try
+            {
+                if (argument != "")
+                    Cmds(argument);
+            }
             catch
             {
-                OutP(
-"Error Caught Running: " + argument);
+                OutP("Error Caught Running: " + argument);
             }
+
             if (rmTGS) RemTags(); try { if (active) MScript(); else SetConveyorUsage(true); } catch { OutP("Error Caught In Main"); }
             if (Runtime.CurrentInstructionCount > mxActs) { mxActs = Runtime.CurrentInstructionCount; hGsT = itSg; }
             Save();
@@ -272,7 +286,11 @@ namespace IngameScript
 "All ore quotas to X" + nLne + "~Set All X" + nLne + "All quotas to X" + nLne + "~Merge A : B" + nLne + "Merge and save mod items A and B");
             }
         }
-        public bool AvailableActions() { return (Runtime.CurrentInstructionCount < (Runtime.MaxInstructionCount * actionLimiterMultiplier) && (DateTime.Now - tickStartTime).TotalMilliseconds < runTimeLimiter); }
+        public bool AvailableActions()
+        {
+            return (Runtime.CurrentInstructionCount < (Runtime.MaxInstructionCount * actionLimiterMultiplier) && 
+                (DateTime.Now - tickStartTime).TotalMilliseconds < runTimeLimiter);
+        }
         public void Cmds(string argument)
         {
             bool sDA = false; string arg = argument.ToLower().Replace(" ", ""); if (arg.StartsWith("setcomponent")) { sDA = true; int taMT = (int)double.Parse(arg.Substring(12, arg.Length - 12)); if (taMT == -2147483648) taMT = 2147483647; SetQ(taMT, ref cDL); }
@@ -306,10 +324,24 @@ arg.Length - 10); rmTGS = true;
         public void SetQ(int amt, ref SortedList<string,
 ItemDefinition> list)
         { for (int i = 0; i < list.Count; i++) list.Values[i].dAMT = amt; }
-        public void Script() { if (DateTime.Now >= invScanTime) { if (DateTime.Now >= hpDLy) Echo("Inventory scan"); if (ResearchInventory()) invScanTime = DateTime.Now.AddSeconds(scanDelay); } else ScriptSwitch(); }
+
+
+        public void Script()
+        {
+            if (DateTime.Now >= invScanTime)
+            {
+                if (DateTime.Now >= hpDLy)
+                    Echo("Inventory scan");
+                if (ResearchInventory())
+                    invScanTime = DateTime.Now.AddSeconds(scanDelay);
+            }
+            else ScriptSwitch();
+        }
+
         public void ScriptSwitch()
         {
-            int tmpA = sM; if (DateTime.Now >= hpDLy) Echo("Script stage: " + sM);
+            int tmpA = sM;
+            if (DateTime.Now >= hpDLy) Echo("Script stage: " + sM);
             switch (sM)
             {
                 case 0: if (countItemsAndBlueprints) { do { CountItemsFromColl(); } while (AvailableActions() && sM == 0); } else sM++; break;
@@ -329,8 +361,8 @@ ItemDefinition> list)
                 case 6:
                     if (spreadBlueprints)
                     {
-                        do { WorkIdleAssemblers(); } while (
-AvailableActions() && sM == 7);
+                        do { WorkIdleAssemblers();}
+                        while (AvailableActions() && sM == 7);
                     }
                     else sM++; break;
                 case 7: if (spreadRefineries) { do { WorkIdleRefineries(); } while (AvailableActions() && sM == 8); } else sM++; break;
@@ -408,21 +440,39 @@ inGTs) { StkItm(dAMT, iDL, iSB, tag); inGTs = false; }
             }
             if (scrIx >= aBL.Count || rsTb) { scrIx = 0; sM++; }
         }
+        
+        /// <summary>
+        /// Stacks items
+        /// </summary>
+        /// <param name="dAMT">Amount of items</param>
+        /// <param name="defList"></param>
+        /// <param name="indices"></param>
+        /// <param name="tag"></param>
         public void StkItm(double dAMT, SortedList<string, ItemDefinition> defList, List<int> indices, string tag)
         {
             try
             {
                 List<MyInventoryItem> items = new List<MyInventoryItem>(); for (int i = 0; i < defList.Count; i++)
                 {
-                    if (tag == "*" || defList.Values[i].oN.ToLower().Replace(" ", "")
-.StartsWith(tag))
+                    if (tag == "*" || defList.Values[i].oN.ToLower().Replace(" ", "").StartsWith(tag))
                     {
                         string itemId = defList.Values[i].ItemId(), iTY = defList.Values[i].iTY, iST = defList.Values[i].iST; IMyInventory loInv = aBL[scrIx].GetInventory(0); double amt = CntInInv(itemId, loInv), tmpA = 0.0; if (amt < dAMT)
                         {
                             for (int x = 0; x < indices.Count; x++)
                             {
-                                IMyInventory stInv = aBL[indices[x]].GetInventory(0); if (aBL[indices[x]].Position != aBL[scrIx].Position &&
-CntInInv(itemId, stInv) > 0.0) { stInv.GetItems(items, (t => t.Type.ToString() == itemId)); for (int b = 0; b < items.Count; b++) { if (!LoadoutHome(aBL[indices[x]].CustomData.ToLower(), iTY, iST)) { TPot(loInv, stInv, items[b], dAMT - amt, ref tmpA); amt += tmpA; if (amt >= dAMT) break; break; } } }
+                                IMyInventory stInv = aBL[indices[x]].GetInventory(0);
+                                if (aBL[indices[x]].Position != aBL[scrIx].Position && CntInInv(itemId, stInv) > 0.0)
+                                {
+                                    stInv.GetItems(items, (t => t.Type.ToString() == itemId));
+
+                                    for (int b = 0; b < items.Count; b++)
+                                    {
+                                        if (!LoadoutHome(aBL[indices[x]].CustomData.ToLower(), iTY, iST))
+                                        { TPot(loInv, stInv, items[b], dAMT - amt, ref tmpA); amt += tmpA; if (amt >= dAMT) break;
+                                            break;
+                                        }
+                                    }
+                                }
                                 if (amt >= dAMT) break;
                             }
                         }
@@ -430,8 +480,18 @@ CntInInv(itemId, stInv) > 0.0) { stInv.GetItems(items, (t => t.Type.ToString() =
                         {
                             for (int x = 0; x < indices.Count; x++)
                             {
-                                if (
-aBL[indices[x]].Position != aBL[scrIx].Position) { IMyInventory stInv = aBL[indices[x]].GetInventory(0); loInv.GetItems(items, (t => t.Type.ToString() == itemId)); foreach (MyInventoryItem item in items) { TPot(stInv, loInv, item, amt - dAMT, ref tmpA); amt -= tmpA; if (amt <= dAMT) break; break; } }
+                                if (aBL[indices[x]].Position != aBL[scrIx].Position)
+                                {
+                                    IMyInventory stInv = aBL[indices[x]].GetInventory(0);
+                                    loInv.GetItems(items, (t => t.Type.ToString() == itemId));
+                                    foreach (MyInventoryItem item in items)
+                                    {
+                                        TPot(stInv, loInv, item, amt - dAMT, ref tmpA); amt -= tmpA; if (amt <= dAMT)
+                                            break;
+                                        break;
+                                        //not sure why there are two breaks
+                                    }
+                                }
                                 if (amt <= dAMT) break;
                             }
                         }
@@ -1024,29 +1084,47 @@ itemRatio) return oDL[iST].vRt;
                 {
                     if (bkLT.Count == 0 || !(bkLT[0] is IMyAssembler)) { Fill<IMyAssembler>(ref bkLT, "", manualAssemblyKeyword.ToLower()); assCount = bkLT.Count; } while (bkLT.Count > 0)
                     {
-                        IMyAssembler block = (IMyAssembler)bkLT[0]; bool tmpB = EyAss(bkLT[0]); List<MyProductionItem> queueList = new List<MyProductionItem>();
-                        block.GetQueue(queueList); bool readyForNext = true, tmpC = false; if (block.IsQueueEmpty || block.Mode == dsMd || tmpB)
+                        IMyAssembler block = (IMyAssembler)bkLT[0];
+                        bool tmpB = EyAss(bkLT[0]);
+                        List<MyProductionItem> queueList = new List<MyProductionItem>();
+                        block.GetQueue(queueList);
+                        bool readyForNext = true,
+                             tmpC = false;
+                        if (block.IsQueueEmpty || block.Mode == dsMd || tmpB)
                         {
-                            IMyInventory origInv = bkLT[0].GetInventory(0); List<MyInventoryItem> inventoryItemList = new List<MyInventoryItem>(); origInv.GetItems(inventoryItemList); int origCount = inventoryItemList.Count, checkedItems = 0, tmpA = 0; for (int i = 0;
-i < inventoryItemList.Count; i++) { checkedItems++; if (FindItemHome(bkLT[0], 0, inventoryItemList[i], ref tmpC)) break; }
+                            IMyInventory origInv = bkLT[0].GetInventory(0); List<MyInventoryItem> inventoryItemList = new List<MyInventoryItem>(); origInv.GetItems(inventoryItemList); int origCount = inventoryItemList.Count, checkedItems = 0, tmpA = 0;
+                            for (int i = 0; i < inventoryItemList.Count; i++)
+                            {
+                                checkedItems++;
+                                if (FindItemHome(bkLT[0], 0, inventoryItemList[i], ref tmpC)) break;
+                            }
+
                             if (block.IsQueueEmpty || tmpB || block.Mode == asMd)
                             {
                                 origInv = bkLT[0].GetInventory(1); origInv.GetItems(inventoryItemList); tmpA += inventoryItemList.Count; for (int i = 0; i < inventoryItemList.Count; i++)
                                 {
-                                    checkedItems++; if (FindItemHome(bkLT[0], 1,
-inventoryItemList[i], ref tmpC)) break;
+                                    checkedItems++;
+                                    if (FindItemHome(bkLT[0], 1, inventoryItemList[i], ref tmpC)) break;
                                 }
                             }
                             if (checkedItems < origCount + tmpA) readyForNext = false;
                         }
-                        if (readyForNext) bkLT.RemoveAt(0); if (!AvailableActions()) break;
+                        if (readyForNext) bkLT.RemoveAt(0);
+                        if (!AvailableActions()) break;
                     }
-                    if (bkLT.Count == 0 || rsTb) { bkLT.Clear(); sM++; eAsTm = DateTime.Now.AddSeconds(emptyAssemblerDelay); }
+                    if (bkLT.Count == 0 || rsTb)
+                    {
+                        bkLT.Clear();
+                        sM++;
+                        eAsTm = DateTime.Now.AddSeconds(emptyAssemblerDelay);
+                    }
                 }
                 catch { OutP("Error Emptying Assemblers"); }
             }
             else sM++;
         }
+
+
         public void MoveBadRequests()
         {
             try
@@ -1087,6 +1165,8 @@ inventoryItemList[i], ref tmpC)) break;
             }
             return true;
         }
+
+
         public List<MyInventoryItem> invItemList = new List<MyInventoryItem>(); public void ScourInventories(bool distribute)
         {
             try
@@ -1100,17 +1180,32 @@ inventoryItemList[i], ref tmpC)) break;
                             string iTY = invItemList[0].Type.TypeId, iST = invItemList[0].Type.SubtypeId; try { RecordItem(invItemList[0], tBlk, origInv); } catch { }
                             if (!distribute && ((curInv == 1 && !(tBlk is IMyAssembler)) || NeedsHome(invItemList[0], tBlk, curInv))) { bool tmpA = false; FindItemHome(tBlk, curInv, invItemList[0], ref tmpA); if (!tmpA) invItemList.RemoveAt(0); }
                             else if (distribute && Distributable(invItemList[0], tBlk)) { if (DistributeItems(origInv, invItemList[0])) invItemList.RemoveAt(0); }
-                            else invItemList.RemoveAt(0)
-; if (!AvailableActions()) break;
+                            else invItemList.RemoveAt(0);
+                            if (!AvailableActions()) break;
                         }
                     }
-                    catch { curInv = 0; scrIx++; invItemList.Clear(); OutP("Error Caught Scouring Inventory, Skipping This One"); }
-                    if (invItemList.Count == 0) { if (curInv == 0 && tBlk.InventoryCount > 1 && !distribute) curInv = 1; else { scrIx++; curInv = 0; } }
+                    catch
+                    {
+                        curInv = 0; scrIx++;
+                        invItemList.Clear();
+                        OutP("Error Caught Scouring Inventory, Skipping This One");
+                    }
+                    if (invItemList.Count == 0)
+                    {
+                        if (curInv == 0 && tBlk.InventoryCount > 1 && !distribute) curInv = 1;
+                        else { scrIx++; curInv = 0; }
+                    }
                     if ((!distribute && scrIx >= aBL.Count) || (distribute && scrIx >= cIDS.Count) || rsTb)
                     {
                         if (distribute) flCns = false; scrIx = 0;
-                        curInv = 0; invItemList.Clear(); if (distribute) { scourTime = DateTime.Now.AddSeconds(sortAndDistributeDelay); recordItems = !recordItems; }
-                        sM++; bkLT.Clear();
+                        curInv = 0; invItemList.Clear();
+                        if (distribute)
+                        {
+                            scourTime = DateTime.Now.AddSeconds(sortAndDistributeDelay);
+                            recordItems = !recordItems;
+                        }
+                        sM++;
+                        bkLT.Clear();
                     }
                 }
                 else sM++;
@@ -1138,9 +1233,21 @@ tag.Contains(":")) tag = tag.Substring(index, tag.Length - index); if (((iTY == 
             try
             {
                 string iTY = item.Type.TypeId,
-iST = item.Type.SubtypeId; string customData = block.CustomData.ToLower(); bool ldOt = customData.Contains("{"); if (CanType(iTY) && flCns && !(block is IMyGasTank) && !(block is IMyGasGenerator)) return true; if (ldOt && LoadoutHome(customData, iTY, iST)) return false; RemoveTags(ref customData); if (block is IMyReactor) return false; if (iST == "Ice" && block is IMyGasGenerator)
-                    return false; if (IsGun(block)) return false; if (iTY == orTyp && (block is IMyRefinery) && !block.BlockDefinition.ToString().ToLower().Contains(srSbTyp.ToLower())) return false; if (iTY == igtTyp && iST == "Stone" && block.BlockDefinition.ToString().ToLower().Contains(srSbTyp.ToLower())) return false; if ((block is IMyAssembler) && block.BlockDefinition.ToString().ToLower()
-                                            .Contains("survival") && (iTY == orTyp)) return false; if ((block is IMyAssembler) && (iTY == igtTyp && ((IMyAssembler)block).Mode == asMd)) return false; if ((block is IMyAssembler) && ((IMyAssembler)block).Mode == dsMd && (ToolType(iTY) || iTY == cptTyp)) return false; if (block is IMyShipWelder)
+                iST = item.Type.SubtypeId;
+                string customData = block.CustomData.ToLower();
+                bool ldOt = customData.Contains("{");
+                if (CanType(iTY) && flCns && !(block is IMyGasTank) && !(block is IMyGasGenerator)) return true;
+                if (ldOt && LoadoutHome(customData, iTY, iST)) return false;
+                RemoveTags(ref customData); if (block is IMyReactor) return false;
+                if (iST == "Ice" && block is IMyGasGenerator) return false;
+                if (IsGun(block)) return false;
+                if (iTY == orTyp && (block is IMyRefinery) && !block.BlockDefinition.ToString().ToLower().Contains(srSbTyp.ToLower())) return false;
+                if (iTY == igtTyp && iST == "Stone" && block.BlockDefinition.ToString().ToLower().Contains(srSbTyp.ToLower())) return false;
+                if ((block is IMyAssembler) && block.BlockDefinition.ToString().ToLower()
+                                            .Contains("survival") && (iTY == orTyp)) return false;
+                if ((block is IMyAssembler) && (iTY == igtTyp && ((IMyAssembler)block).Mode == asMd)) return false;
+                if ((block is IMyAssembler) && ((IMyAssembler)block).Mode == dsMd && (ToolType(iTY) || iTY == cptTyp)) return false;
+                if (block is IMyShipWelder)
                 {
                     if (!block.IsWorking) return true;
                     else
@@ -1165,17 +1272,26 @@ toolStorageKeyword.ToLower()))) return false; if (!(block is IMyCargoContainer))
             string iTYB = iTY.ToLower(); if (iTYB == tlTyp.ToLower() || iTYB ==
 hdBtTyp.ToLower() || iTYB == oxBtTyp.ToLower() || iTYB == amTyp.ToLower()) return true; return false;
         }
+
+
         public bool Distributable(MyInventoryItem item, IMyTerminalBlock block)
         {
             try
             {
-                string iTY = item.Type.TypeId, iST = item.Type.SubtypeId; if (!(block is IMyCargoContainer)) return false; if (!block.CustomData.ToLower().Contains("distribute") && !distributeLoadoutItems &&
-LoadoutHome(block.CustomData.ToLower(), iST, iTY)) return false; if (iTY == orTyp && iST == "Stone" && !refineStone) return false; if ((iTY == amTyp && amPBK.Count > 0) || (iST == "Ice" && icPB.Count > 0) || (iTY == orTyp && orPB.Count > 0) || (Fuel(iTY + "/" + iST) && rcBK.Count > 0)) return true; if (iTY == igtTyp && iST == "Stone" && stBK.Count > 0) return true;
+                string iTY = item.Type.TypeId, iST = item.Type.SubtypeId;
+                if (!(block is IMyCargoContainer)) return false;
+                if (!block.CustomData.ToLower().Contains("distribute") && !distributeLoadoutItems &&
+                    LoadoutHome(block.CustomData.ToLower(), iST, iTY)) return false;
+                if (iTY == orTyp && iST == "Stone" && !refineStone) return false;
+                if ((iTY == amTyp && amPBK.Count > 0) ||
+                    (iST == "Ice" && icPB.Count > 0) || 
+                    (iTY == orTyp && orPB.Count > 0) ||
+                    (Fuel(iTY + "/" + iST) && rcBK.Count > 0)) return true;
+                if (iTY == igtTyp && iST == "Stone" && stBK.Count > 0) return true;
             }
             catch
             {
-                OutP(
-"Error Checking If Item Is Distributable: " + item.Type.ToString());
+                OutP("Error Checking If Item Is Distributable: " + item.Type.ToString());
             }
             return false;
         }
@@ -1190,18 +1306,25 @@ block is IMyGasGenerator)) FillCanister(origInv, item);
             catch { OutP("Error Finding Item Home"); }
             return false;
         }
+
+
         public void FillCanister(IMyInventory origInv, MyInventoryItem item)
         {
-            string iTY = item.Type.TypeId; List<IMyTerminalBlock> bKS = new List<IMyTerminalBlock>(); double tmpA = 0; if (iTY == oxBtTyp)
+            string iTY = item.Type.TypeId; List<IMyTerminalBlock> bKS = new List<IMyTerminalBlock>();
+            double tmpA = 0; if (iTY == oxBtTyp)
             {
-                gSys.GetBlocksOfType<IMyGasTank>(bKs, (b => b.IsFunctional && b.CubeGrid == Grid && !b.BlockDefinition.ToString().ToLower().Contains("hydrogen"))); if (bKS.Count == 0) Fill<IMyGasTank>(ref bKS, "", "", "", "hydrogen");
+                gSys.GetBlocksOfType<IMyGasTank>(bKs, (b => b.IsFunctional && b.CubeGrid == Grid && !b.BlockDefinition.ToString().ToLower().Contains("hydrogen")));
+                if (bKS.Count == 0) Fill<IMyGasTank>(ref bKS, "", "", "", "hydrogen");
             }
             else
             {
-                gSys.GetBlocksOfType<IMyGasTank>(bKs, (b => b.IsFunctional && b.CubeGrid == Grid && b.BlockDefinition.ToString().ToLower().Contains("hydrogen"))); if (
-bKS.Count == 0) Fill<IMyGasTank>(ref bKS, "", "", "hydrogen", "");
+                gSys.GetBlocksOfType<IMyGasTank>(bKs, (b => b.IsFunctional && b.CubeGrid == Grid && b.BlockDefinition.ToString().ToLower().Contains("hydrogen")));
+                if (bKS.Count == 0) Fill<IMyGasTank>(ref bKS, "", "", "hydrogen", "");
             }
-            if (bKS.Count == 0) { gSys.GetBlocksOfType<IMyGasGenerator>(bKs, (b => b.IsFunctional && b.CubeGrid == Grid)); if (bKS.Count == 0) Fill<IMyGasGenerator>(ref bKS); }
+            if (bKS.Count == 0)
+            {
+                gSys.GetBlocksOfType<IMyGasGenerator>(bKs, (b => b.IsFunctional && b.CubeGrid == Grid));
+                if (bKS.Count == 0) Fill<IMyGasGenerator>(ref bKS); }
             for (int i = 0; i < bKS.Count; i++)
             {
                 if ((bKS[i] is IMyGasGenerator) || ((IMyGasTank)bKS[i]).FilledRatio > 0.0)
@@ -1211,29 +1334,46 @@ bKS.Count == 0) Fill<IMyGasTank>(ref bKS, "", "", "hydrogen", "");
                 }
             }
         }
+
         public bool SortAway(IMyInventory origInv, MyInventoryItem item, string iST, ref bool tmpA)
         {
-            string iTY = item.Type.TypeId; if (iTY == igtTyp) return SortAway(origInv, item, iST, iSB, ref tmpA);
-            else if (iTY == orTyp) return SortAway(origInv, item, iST, oSB, ref tmpA); else if (ToolType(iTY)) return SortAway(origInv, item, iST, tSB, ref tmpA); else if (iTY == cptTyp) return SortAway(origInv, item, iST, cSB, ref tmpA); return false;
+            string iTY = item.Type.TypeId;
+            if (iTY == igtTyp) return SortAway(origInv, item, iST, iSB, ref tmpA);
+            else if (iTY == orTyp) return SortAway(origInv, item, iST, oSB, ref tmpA);
+            else if (ToolType(iTY)) return SortAway(origInv, item, iST, tSB, ref tmpA);
+            else if (iTY == cptTyp) return SortAway(origInv, item, iST, cSB, ref tmpA);
+            return false;
         }
+
         public bool SortAway(IMyInventory origInv, MyInventoryItem item, string iST, List<int> taMT, ref bool tmpA)
         {
             double movedAmount = 0.0; double wholeAmount = (double)item.Amount; for (int i = stIx; i < taMT.Count; i++)
             {
-                stIx++; IMyInventory inv = aBL[taMT[i]].GetInventory(0); if (!inv.IsFull && TPot(inv, origInv, item, 0.0, ref movedAmount))
+                stIx++; IMyInventory inv = aBL[taMT[i]].GetInventory(0);
+                if (!inv.IsFull && TPot(inv, origInv, item, 0.0, ref movedAmount))
                 {
                     string itemName = item.Type.ToString(); if (!outIdList.Contains(itemName))
                     {
-                        OutP("Tried To Sort: " + ShortNum(movedAmount, true) + " " + iST + " Into: " +
-aBL[taMT[i]].CustomName + " From: " + ((IMyTerminalBlock)origInv.Owner).CustomName); outIdList.Add(itemName);
+                        OutP("Tried To Sort: " + ShortNum(movedAmount, true) + " " + iST + " Into: " + aBL[taMT[i]].CustomName + " From: " + ((IMyTerminalBlock)origInv.Owner).CustomName);
+                        outIdList.Add(itemName);
                     }
-                    if (movedAmount >= wholeAmount) { stIx = 0; return true; }
+                    if (movedAmount >= wholeAmount)
+                    { stIx = 0; return true; }
                 }
-                if (!AvailableActions()) { tmpA = true; break; }
+                if (!AvailableActions())
+                {
+                    tmpA = true; break;
+                }
             }
-            if (stIx >= taMT.Count) { stIx = 0; tmpA = false; }
+            if (stIx >= taMT.Count)
+            {
+                stIx = 0; tmpA = false;
+            }
             return false;
         }
+
+
+
         public bool ResearchInventory()
         {
             try
@@ -1245,7 +1385,13 @@ aBL[taMT[i]].CustomName + " From: " + ((IMyTerminalBlock)origInv.Owner).CustomNa
                     for (int i = 0; i < sBks.Values.Count; i++) aBL.Add(sBks.Values[i]);
                     sBks.Clear(); for (int i = 0; i < bKs.Count; i++) aBL.Add(bKs[i]); bKs.Clear();
                 }
-                if (ivBkCt != aBL.Count) SetConveyorUsage(!conveyorControl); if (GetIndices()) { itRH = true; ivBkCt = aBL.Count; return true; }
+                if (ivBkCt != aBL.Count)
+                    SetConveyorUsage(!conveyorControl);
+                if (GetIndices())
+                {
+                    itRH = true;
+                    ivBkCt = aBL.Count;
+                    return true; }
             }
             catch { }
             return false;
@@ -1262,6 +1408,8 @@ MyInventoryItem)origInv.GetItemAt(i); if (itm != null && itm.Type.ToString() == 
             return count;
         }
         public void GunBlocks(ref List<IMyTerminalBlock> list) { list.Clear(); for (int i = 0; i < amPBK.Count; i++) list.Add(aBL[amPBK[i]]); }
+
+
         public bool Fuel(string itemId)
         {
             if (itemId == (igtTyp + "/Uranium")) return true;
@@ -1275,27 +1423,35 @@ MyInventoryItem)origInv.GetItemAt(i); if (itm != null && itm.Type.ToString() == 
                 string iTY = item.Type.TypeId; if (bkLT.Count == 0)
                 {
                     if (iST == "Ice") Fill<IMyGasGenerator>(ref bkLT);
-                    else if (iTY == orTyp) Fill<IMyRefinery>(ref bkLT, "", "",
-"", "shield", srSbTyp.ToLower());
-                    else if (tmpC) Fill<IMyReactor>(ref bkLT); else if (iTY == amTyp) GunBlocks(ref bkLT); else if (iTY == igtTyp && iST == "Stone") Fill<IMyRefinery>(ref bkLT, "", "", srSbTyp.ToLower()); dCt = bkLT.Count;
+                    else if (iTY == orTyp) Fill<IMyRefinery>(ref bkLT, "", "","", "shield", srSbTyp.ToLower());
+                    else if (tmpC) Fill<IMyReactor>(ref bkLT);
+                    else if (iTY == amTyp) GunBlocks(ref bkLT);
+                    else if
+                        (iTY == igtTyp && iST == "Stone") Fill<IMyRefinery>(ref bkLT, "", "", srSbTyp.ToLower());
+                    dCt = bkLT.Count;
                 }
                 if (bkLT.Count > 0)
                 {
-                    double tmpB = RequestItemInfo(item, false, true); double tmpD = tmpB / (double)dCt; double itemAmt = (double)item.Amount,
-totalOre = 0, movedAmount = 0; if (tmpC) tmpD = fuelQuota; else if (iTY == amTyp) tmpD = (double)ammoQuota; else if (iST == "Ice") tmpD = iceQuota; while (bkLT.Count > 0)
+                    double tmpB = RequestItemInfo(item, false, true);
+                    double tmpD = tmpB / (double)dCt;
+                    double itemAmt = (double)item.Amount,totalOre = 0, movedAmount = 0;
+                    if (tmpC) tmpD = fuelQuota;
+                    else if (iTY == amTyp) tmpD = (double)ammoQuota; else if (iST == "Ice") tmpD = iceQuota;
+                    while (bkLT.Count > 0)
                     {
                         try
                         {
                             IMyInventory inv = bkLT[0].GetInventory(0); if (bkLT[0].BlockDefinition.ToString().ToLower().Contains("furnace")) tFnCt++; int index = -1; double amt = CntInInv(itemId, inv, ref index); if (iTY == orTyp && iST != "Ice")
                             {
-                                if (
-iST != "Iron" && iST != "Nickel" && iST != "Cobalt") tmpD = tmpB / ((double)dCt - fnCt); totalOre = (MxVol(inv) * 1000.0) / 0.37; totalOre = totalOre / ((double)oDL.Count - 1.0); if (tmpD > totalOre) tmpD = totalOre;
+                                if (iST != "Iron" && iST != "Nickel" && iST != "Cobalt") tmpD = tmpB / ((double)dCt - fnCt); totalOre = (MxVol(inv) * 1000.0) / 0.37; totalOre = totalOre / ((double)oDL.Count - 1.0); if (tmpD > totalOre) tmpD = totalOre;
                             }
                             if (amt < tmpD)
                             {
                                 amt = tmpD - amt; if (amt > itemAmt || (amt < 1.0 && ToolType(iTY))) amt = itemAmt; if (iTY != igtTyp && iTY != orTyp) { amt = (double)((int)amt); if ((double)amt < 1.0) amt = 1.0; }
-                                if (
-amt > 0.0 && TPot(inv, origInv, item, amt, ref movedAmount)) { taMT = true; itemAmt -= movedAmount; movedAmount = 0; }
+                                if (amt > 0.0 && TPot(inv, origInv, item, amt, ref movedAmount))
+                                {
+                                    taMT = true; itemAmt -= movedAmount; movedAmount = 0;
+                                }
                             }
                             else if (index != -1 && amt > tmpD * 1.15 && !LoadoutHome(bkLT[0].CustomData.ToLower(), iTY, iST)) { MyInventoryItem itm = (MyInventoryItem)inv.GetItemAt(index); if (itm != null) SortAway(inv, itm, iST, ref tmpC); }
                         }
