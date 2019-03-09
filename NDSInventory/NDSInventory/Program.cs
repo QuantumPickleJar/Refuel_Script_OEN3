@@ -19,22 +19,7 @@ namespace IngameScript
 {
     partial class Program : MyGridProgram
     {
-        // This file contains your actual script.
-        //
-        // You can either keep all your code here, or you can create separate
-        // code files to make your program easier to navigate while coding.
-        //
-        // In order to add a new utility class, right-click on your project, 
-        // select 'New' then 'Add Item...'. Now find the 'Space Engineers'
-        // category under 'Visual C# Items' on the left hand side, and select
-        // 'Utility Class' in the main area. Name it in the box below, and
-        // press OK. This utility class will be merged in with your code when
-        // deploying your final script.
-        //
-        // You can also simply create a new utility class manually, you don't
-        // have to use the template if you don't want to. Just do so the first
-        // time to see what a utility class looks like.
-
+        //strings
         public string 
             outputPanelName = "Inventory Panel",
             nLne = Environment.NewLine,
@@ -63,7 +48,8 @@ namespace IngameScript
             hdBtTyp = "MyObjectBuilder_GasContainerObject",
             oxBtTyp = "MyObjectBuilder_OxygenContainerObject", amTyp = "MyObjectBuilder_AmmoMagazine", srSbTyp = "GravelRefinery", cornerPanelDef = "blockcorner", exclusionKeyword = "exclude", autoConveyorKeyword = "autoConveyor", tTR = "", scriptName = "NDS Inventory Manager", crossGridKeyword = "crossGrid", noShowKeyword = "noShow", manualAssemblyKeyword = "manualAssembly", tgSs = "";
 
-            public List<string> otLT = new List<string>(),
+        // List<string>
+        public List<string> otLT = new List<string>(),
             fIdLT = new List<string>(),
             outIdList = new List<string>(),
             otDtLst = new List<string>(),
@@ -86,15 +72,149 @@ namespace IngameScript
             orPB = new List<int>(),
             stBK = new List<int>(),
             amPBK = new List<int>(),
-            rcBK = new List<int>()
-                                 ,
-            tSB = new List<int>(), oSB = new List<int>(), iSB = new List<int>(), cSB = new List<int>(), cIDS = new List<int>(), idleList = new List<int>(); public int outputLimit = 25, tST = 0, tID = 0, graphLength = 4, WPanelWidth = 1575, WPanelHeight = 735, LPanelWidth = 787, LPanelHeight = 739, charWidth = 30, charHeight = 42, nameWidth = 19, SCornerHeight = 193, SFCornerHeight = 226,
-                                              graphLengthWide = 8, cHG = 109, cFH = 127, updateFrequency = 1, gIIX = 0, spIX = 0, quMD = 0, quIX = 0, quCT = 0, refineryMode = 0, sM = 0, smQuIx = 0, iCIX = 0, ivBkCt = 0, scrIx = 0, stIx = 0, stoneOreToIngotBasic = 5, curInv = 0, assCount = 0, flCnsInt = 0, fillCanCycles = 2, oQuI = 0, sgIdx = 0, bpReqs = 0, dCt = 0, nBIX = 0, wkIdx = 0, alter = 0, fnCt = 0, tFnCt = 0, idIdx = 0, cCI = 0, ctMde = 0, ammoQuota = 2,
-                                              mxActs = 0, hGsT = 0; public DateTime invScanTime = DateTime.Now.AddSeconds(-1.0), tickStartTime = DateTime.Now, asPtTm = DateTime.Now, scourTime = DateTime.Now, eAsTm = DateTime.Now, hpDLy = DateTime.Now.AddSeconds(15), nextOut = DateTime.Now, rsTm = DateTime.Now.AddSeconds(15); public double scanDelay = 5, actionLimiterMultiplier = 0.007, runTimeLimiter = 1.5, lowRunTime = 200.0,
-                                                                    highRunTime = 0.0, emptyAssemblerDelay = 8, sortAndDistributeDelay = 8, fuelQuota = 5, assemblerProductionRange = 0.02, iceQuota = 500, outputDelay = 0.15, overrideDelay = 15, version = 4.22; public bool firstCycle = true, conveyorControl = true, sameGridOnly = false, spOre = false, spIgt = false, reQU = false, quotasBelow = false, spCpt = false, spTl = false, ftSCN = true,
-                                                                                       splitOutput = false, fdSPs = false, rmTGS = false, itRH = true, active = true, hRQS = false, recordItems = false, flCns = true, survivalKitAssembly = true, rsTb = false, rSv = false, doubleLineSettings = false, displayQuotas = true, itSk = true, inGTs = false, cmPTs = false, oREs = false, tOLs = false, countLoadoutItems = true, countItemsAndBlueprints = true, dSub = false, queueBlueprints = true,
-                                                                                       sortItems = true, distributeItems = true, removeExcessBlueprintsAssembly = false, emptyAssemblers = true, arrangeBlueprints = true, refineStone = true, removeExcessBlueprintsDisassembly = true, spreadBlueprints = true, spreadRefineries = true, arrangeRefineries = true, spreadGasGenerators = true, spreadReactors = true, spreadAmmo = true, queueDisassembly = true,
-                                                                                       mergeBlueprints = true, doLoadouts = true, scnG = false, distributeLoadoutItems = false; public IMyTerminalBlock tBlk; public IMyInventory tInv; public MyAssemblerMode asMd = MyAssemblerMode.Assembly, dsMd = MyAssemblerMode.Disassembly; public Random rnd = new Random(); public IMyGridTerminalSystem gSys; public IMyCubeGrid Grid; public Program()
+            rcBK = new List<int>(),
+            tSB = new List<int>(),
+            oSB = new List<int>(),
+            iSB = new List<int>(),
+            cSB = new List<int>(),
+            cIDS = new List<int>(),
+            idleList = new List<int>();
+         public int outputLimit = 25,
+            tST = 0,
+            tID = 0,
+            graphLength = 4,
+            WPanelWidth = 1575,
+            WPanelHeight = 735,
+            LPanelWidth = 787,
+            LPanelHeight = 739,
+            charWidth = 30,
+            charHeight = 42,
+            nameWidth = 19,
+            SCornerHeight = 193,
+            SFCornerHeight = 226,
+            graphLengthWide = 8,
+            cHG = 109,
+            cFH = 127,
+            updateFrequency = 1,
+            gIIX = 0,
+            spIX = 0,
+            quMD = 0,
+            quIX = 0,
+            quCT = 0,
+            refineryMode = 0,
+            sM = 0,
+            smQuIx = 0,
+            iCIX = 0,
+            ivBkCt = 0,
+            scrIx = 0,
+            stIx = 0,
+            stoneOreToIngotBasic = 5,
+            curInv = 0,
+            assCount = 0,
+            flCnsInt = 0,
+            fillCanCycles = 2,
+            oQuI = 0,
+            sgIdx = 0,
+            bpReqs = 0,
+            dCt = 0, nBIX = 0,
+            wkIdx = 0,
+            alter = 0,
+            fnCt = 0,
+            tFnCt = 0,
+            idIdx = 0,
+            cCI = 0,
+            ctMde = 0,
+            ammoQuota = 2,
+            mxActs = 0,
+            hGsT = 0;
+        //DateTimes
+        public DateTime invScanTime = DateTime.Now.AddSeconds(-1.0),
+            tickStartTime = DateTime.Now,
+            asPtTm = DateTime.Now,
+            scourTime = DateTime.Now,
+            eAsTm = DateTime.Now,
+            hpDLy = DateTime.Now.AddSeconds(15),
+            nextOut = DateTime.Now,
+            rsTm = DateTime.Now.AddSeconds(15);
+
+        //Doubles
+        public double scanDelay = 5,
+            actionLimiterMultiplier = 0.007,
+            runTimeLimiter = 1.5,
+            lowRunTime = 200.0,
+            highRunTime = 0.0,
+            emptyAssemblerDelay = 8,
+            sortAndDistributeDelay = 8,
+            fuelQuota = 5,
+            assemblerProductionRange = 0.02,
+            iceQuota = 500,
+            outputDelay = 0.15,
+            overrideDelay = 15,
+            version = 4.22;
+
+        //Bools
+        public bool firstCycle = true,
+            conveyorControl = true,
+            sameGridOnly = false,
+            spOre = false,
+            spIgt = false,
+            reQU = false,
+            quotasBelow = false,
+            spCpt = false,
+            spTl = false,
+            ftSCN = true,
+            splitOutput = false,
+            fdSPs = false,
+            rmTGS = false,
+            itRH = true,
+            active = true,
+            hRQS = false,
+            recordItems = false,
+            flCns = true,
+            survivalKitAssembly = true,
+            rsTb = false,
+            rSv = false,
+            doubleLineSettings = false, displayQuotas = true,
+            itSk = true,
+            inGTs = false,
+            cmPTs = false,
+            oREs = false,
+            tOLs = false,
+            countLoadoutItems = true,
+            countItemsAndBlueprints = true,
+            dSub = false,
+            queueBlueprints = true,
+            sortItems = true,
+            distributeItems = true,
+            removeExcessBlueprintsAssembly = false,
+            emptyAssemblers = true,
+            arrangeBlueprints = true,
+            refineStone = true,
+            removeExcessBlueprintsDisassembly = true,
+            spreadBlueprints = true,
+            spreadRefineries = true,
+            arrangeRefineries = true,
+            spreadGasGenerators = true,
+            spreadReactors = true,
+            spreadAmmo = true,
+            queueDisassembly = true,
+            mergeBlueprints = true,
+            doLoadouts = true,
+            scnG = false,
+            distributeLoadoutItems = false;
+
+
+        //Block declarations
+        public IMyTerminalBlock tBlk;
+        public IMyInventory tInv;
+
+        //Assemblers
+        public MyAssemblerMode asMd = MyAssemblerMode.Assembly, dsMd = MyAssemblerMode.Disassembly;
+        public Random rnd = new Random();
+        public IMyGridTerminalSystem gSys;
+        public IMyCubeGrid Grid;
+
+        public Program()
         {
             Runtime.UpdateFrequency = UpdateFrequency.Update1; gSys = GridTerminalSystem; Grid = Me.CubeGrid; FillDict(); LoadData(); Save();
         }
