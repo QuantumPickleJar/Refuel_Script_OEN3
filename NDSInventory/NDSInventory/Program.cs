@@ -66,8 +66,10 @@ namespace IngameScript
 
         public SortedList<string, IMyTerminalBlock> sBks = new SortedList<string,IMyTerminalBlock>();
         public List<IMyTerminalBlock> aBL = new List<IMyTerminalBlock>(),
-            tBL = new List<IMyTerminalBlock>(), tdBL = new List<IMyTerminalBlock>(),
-            bkLT = new List<IMyTerminalBlock>(), bKs = new List<IMyTerminalBlock>();
+            tBL = new List<IMyTerminalBlock>(),
+            tdBL = new List<IMyTerminalBlock>(),
+            bkLT = new List<IMyTerminalBlock>(),
+            bKs = new List<IMyTerminalBlock>();
         public List<int> icPB = new List<int>(),
             orPB = new List<int>(),
             stBK = new List<int>(),
@@ -217,7 +219,12 @@ namespace IngameScript
 
         public Program()
         {
-            Runtime.UpdateFrequency = UpdateFrequency.Update1; gSys = GridTerminalSystem; Grid = Me.CubeGrid; FillDict(); LoadData(); Save();
+            Runtime.UpdateFrequency = UpdateFrequency.Update1;
+            gSys = GridTerminalSystem;
+            Grid = Me.CubeGrid;
+            FillDict();
+            LoadData();
+            Save();
         }
 
         public void Save() { }
@@ -250,10 +257,19 @@ namespace IngameScript
             if (!firstCycle && DateTime.Now < invScanTime)
             {
                 if (Runtime.LastRunTimeMs > highRunTime)
-                    highRunTime = Runtime.LastRunTimeMs; if (Runtime.LastRunTimeMs < lowRunTime) lowRunTime = Runtime.LastRunTimeMs;
+                    highRunTime = Runtime.LastRunTimeMs;
+                if (Runtime.LastRunTimeMs < lowRunTime)
+                    lowRunTime = Runtime.LastRunTimeMs;
             }
             bool tmpA = alter == 0 || !splitOutput || DateTime.Now < nextOut, tmpB = alter == 1 || !splitOutput; if (splitOutput) { if (alter == 0) alter = 1; else alter = 0; }
-            if (tmpA) try { Script(); } catch { OutP("Error Caught In Script"); }
+            if (tmpA) try
+                {
+                    Script();
+                }
+                catch
+                {
+                    OutP("Error Caught In Script");
+                }
             if (tmpB)
             {
                 try { if (DateTime.Now >= nextOut) MainOuts(); }
@@ -320,7 +336,24 @@ arg.Length - 10); rmTGS = true;
             if (sDA) SaveData();
         }
         public void Toggle(bool bl)
-        { countItemsAndBlueprints = bl; queueBlueprints = bl; sortItems = bl; distributeItems = bl; emptyAssemblers = bl; arrangeBlueprints = bl; spreadBlueprints = bl; spreadRefineries = bl; arrangeRefineries = bl; spreadGasGenerators = bl; spreadReactors = bl; spreadAmmo = bl; queueDisassembly = bl; mergeBlueprints = bl; doLoadouts = bl; SaveData(); }
+        {
+            countItemsAndBlueprints = bl;
+            queueBlueprints = bl;
+            sortItems = bl;
+            distributeItems = bl;
+            emptyAssemblers = bl;
+            arrangeBlueprints = bl;
+            spreadBlueprints = bl;
+            spreadRefineries = bl;
+            arrangeRefineries = bl;
+            spreadGasGenerators = bl;
+            spreadReactors = bl;
+            spreadAmmo = bl;
+            queueDisassembly = bl;
+            mergeBlueprints = bl;
+            doLoadouts = bl;
+            SaveData();
+        }
         public void SetQ(int amt, ref SortedList<string,
 ItemDefinition> list)
         { for (int i = 0; i < list.Count; i++) list.Values[i].dAMT = amt; }
@@ -517,6 +550,8 @@ i < mdQuLst.Count; i++) if (mdQuLst[i].blueprintId.ToString() == blueprintId.ToS
         public bool VerifyBlueprint(
 string bST, SortedList<string, ItemDefinition> list)
         { if (bST == "StoneOreToIngotBasic") return true; for (int i = 0; i < list.Count; i++) { if (bST == list.Values[i].bST) return true; } return false; }
+
+
         public void RecordBlueprint(MyDefinitionId blueprintId)
         {
             if (!rcdBps.Contains(blueprintId.ToString()))
@@ -681,8 +716,9 @@ false, assemblerProductionRange); if (tmpA > 0.0) RemBp(cDL.Values[a].bST, false
             }
             return false;
         }
-        public SortedDictionary<int,
-IMyTerminalBlock> iBks = new SortedDictionary<int, IMyTerminalBlock>(); public void AddIndex(IMyTerminalBlock block, int i, bool oR = false)
+        
+        public SortedDictionary<int,IMyTerminalBlock> iBks = new SortedDictionary<int, IMyTerminalBlock>();
+        public void AddIndex(IMyTerminalBlock block, int i, bool oR = false)
         {
             bool oRI = iSB.Count == 0, oRO = oSB.Count == 0, oRC = cSB.Count == 0, oRT = tSB.Count == 0; if (block is IMyCargoContainer)
             {
@@ -723,16 +759,44 @@ block is IMyReactor) rcBK.Add(i);
                 }
             }
         }
-        public void RemoveTags(ref string cData) { RemoveTags(ref cData, "[", "]"); RemoveTags(ref cData, "{", "}"); }
-        public List<MyInventoryItem> cIvImLt = new List<MyInventoryItem>()
-, ctOtIv = new List<MyInventoryItem>(); public List<MyProductionItem> countOutputQueue = new List<MyProductionItem>(); public void CountItemsFromColl()
+        public void RemoveTags(ref string cData)
         {
-            try { if (DateTime.Now >= hpDLy && !dSub) { Echo("Script substage: " + ctMde); dSub = true; } switch (ctMde) { case 0: CountItems(); break; case 1: CountBlueprints(); break; } } catch { OutP("Error Caught Counting"); }
+            RemoveTags(ref cData, "[", "]");
+            RemoveTags(ref cData, "{", "}");
+        }
+        public List<MyInventoryItem> cIvImLt = new List<MyInventoryItem>(), ctOtIv = new List<MyInventoryItem>();
+
+        public List<MyProductionItem> countOutputQueue = new List<MyProductionItem>(); public void CountItemsFromColl()
+        {
+            try
+            {
+                if (DateTime.Now >= hpDLy && !dSub)
+                {
+                    Echo("Script substage: " + ctMde);
+                    dSub = true;
+                }
+                switch (ctMde)
+                {
+                    case 0:
+                        CountItems();
+                        break;
+                    case 1:
+                        CountBlueprints();
+                        break;
+                }
+            }
+            catch
+            {
+                OutP("Error Caught Counting");
+            }
             if (ctMde > 1 || rsTb)
             {
                 ctMde = 0; sM++;
             }
         }
+
+
+
         public void CountBlueprints()
         {
             try
@@ -783,6 +847,9 @@ cIvImLt.Count > 0) { try { if (!Discount(aBL[i], cIvImLt[0])) AddTempItemCount(c
                 iCIX++; if (iCIX > 3) { iCIX = -1; cCI = 0; ctMde++; }
             }
         }
+
+
+
         public void SetConveyorUsage(bool tmpB = false)
         {
             List<IMyTerminalBlock> bKS = new List<IMyTerminalBlock>(); string tmpA = autoConveyorKeyword.ToLower(); Fill<IMyReactor>(ref bKS, "", tmpA); for (int i = 0; i < bKS.Count; i++) ((IMyReactor)bKS[i]).UseConveyorSystem = tmpB; Fill<IMyGasGenerator>(ref bKS, "", tmpA); for (int i = 0;
@@ -830,6 +897,8 @@ exclusionKeyword.ToLower()) && p.CubeGrid.Equals(Grid) && (exclude == "" || !p.C
             catch { }
             if (bkLT.Count == 0 || rsTb) { sM++; bkLT.Clear(); }
         }
+
+
         public void WorkIdle(bool gasGenerators, bool reactors = false, bool weapons = false, bool sifters = false)
         {
             if (bkLT.Count == 0)
@@ -845,8 +914,11 @@ exclusionKeyword.ToLower()) && p.CubeGrid.Equals(Grid) && (exclude == "" || !p.C
             {
                 try
                 {
-                    IMyInventory origInv = bkLT[wkIdx].GetInventory(0); List<MyInventoryItem> inventoryItemList = new List<MyInventoryItem>(); origInv.GetItems(inventoryItemList); if (
-inventoryItemList.Count > 1 || (inventoryItemList.Count > 0 && (double)inventoryItemList[0].Amount > 1.0))
+                    IMyInventory origInv = bkLT[wkIdx].GetInventory(0);
+                    List<MyInventoryItem> inventoryItemList = new List<MyInventoryItem>();
+                    origInv.GetItems(inventoryItemList);
+
+                    if (inventoryItemList.Count > 1 || (inventoryItemList.Count > 0 && (double)inventoryItemList[0].Amount > 1.0))
                     {
                         for (int i = idIdx; i < bkLT.Count; i++)
                         {
@@ -1023,13 +1095,20 @@ itemRatio) return oDL[iST].vRt;
         }
         public List<string> RequestItemInfo(string iTY, string iST)
         {
-            List<string> oNs = new List<string>(); if (iTY == cptTyp && cDL.ContainsKey(iST)) oNs.Add(cDL[iST].oN); if (ToolType(iTY) && tDL.ContainsKey(iST)) oNs.Add(tDL[iST].oN); if (iTY == igtTyp && iDL.ContainsKey(iST))
-                oNs.Add(iDL[iST].oN); if (iTY == orTyp && oDL.ContainsKey(iST)) oNs.Add(oDL[iST].oN); return oNs;
+            List<string> oNs = new List<string>();
+            if (iTY == cptTyp && cDL.ContainsKey(iST)) oNs.Add(cDL[iST].oN);
+            if (ToolType(iTY) && tDL.ContainsKey(iST)) oNs.Add(tDL[iST].oN);
+            if (iTY == igtTyp && iDL.ContainsKey(iST))
+                oNs.Add(iDL[iST].oN); if (iTY == orTyp && oDL.ContainsKey(iST)) oNs.Add(oDL[iST].oN);
+            return oNs;
+
         }
         public void AddItemDef(string itemName, string iST, string iTY, string bST, double dAMT, double vRt = 0.37)
         {
             ItemDefinition def = new ItemDefinition(); def.iST = iST; def.iTY = iTY; def.bST = bST; def.dAMT = dAMT; def.oN = itemName; def.vRt = vRt; AddItemDefinition(def);
         }
+
+
         public void AddItemDefinition(ItemDefinition def, bool update = false)
         {
             bool found = false; if (def.iTY == cptTyp) { if (update) { if (cDL.ContainsKey(def.iST)) { cDL[def.iST].oN = def.oN; cDL[def.iST].fuel = def.fuel; cDL[def.iST].vRt = def.vRt; found = true; } } if (!found) cDL[def.iST] = def; }
@@ -1062,19 +1141,69 @@ itemRatio) return oDL[iST].vRt;
         public void FillDict()
         {
             tDL.Clear(); iDL.Clear(); oDL.Clear(); cDL.Clear();
-            AddItemDef("Bulletproof Glass", "BulletproofGlass", cptTyp, "BulletproofGlass", 0, 8); AddItemDef("Canvas", "Canvas", cptTyp, "Canvas", 0, 8); AddItemDef("Computer", "Computer", cptTyp, "ComputerComponent", 0, 1); AddItemDef("Construction Comp", "Construction", cptTyp, "ConstructionComponent", 0, 2); AddItemDef("Detector Comp", "Detector", cptTyp,
-                "DetectorComponent", 0, 6); AddItemDef("Display", "Display", cptTyp, "Display", 0, 6); AddItemDef("Explosives", "Explosives", cptTyp, "ExplosivesComponent", 0, 2); AddItemDef("Girder", "Girder", cptTyp, "GirderComponent", 0, 2); AddItemDef("Gravity Gen. Comp", "GravityGenerator", cptTyp, "GravityGeneratorComponent", 0, 200); AddItemDef(
-                     "Interior Plate", "InteriorPlate", cptTyp, "InteriorPlate", 0, 5); AddItemDef("Large Steel Tube", "LargeTube", cptTyp, "LargeTube", 0, 38); AddItemDef("Medical Comp", "Medical", cptTyp, "MedicalComponent", 0, 160); AddItemDef("Metal Grid", "MetalGrid", cptTyp, "MetalGrid", 0, 15); AddItemDef("Motor", "Motor", cptTyp, "MotorComponent", 0, 8); AddItemDef(
-                          "Power Cell", "PowerCell", cptTyp, "PowerCell", 0, 45); AddItemDef("Radio Comm. Comp", "RadioCommunication", cptTyp, "RadioCommunicationComponent", 0, 70); AddItemDef("Reactor Comp", "Reactor", cptTyp, "ReactorComponent", 0, 8); AddItemDef("Small Steel Tube", "SmallTube", cptTyp, "SmallTube", 0, 2); AddItemDef("Solar Cell", "SolarCell", cptTyp, "SolarCell",
-                              0, 20); AddItemDef("Steel Plate", "SteelPlate", cptTyp, "SteelPlate", 0, 3); AddItemDef("Superconductor", "Superconductor", cptTyp, "Superconductor", 0, 8); AddItemDef("Thruster Comp", "Thrust", cptTyp, "ThrustComponent", 0, 10); AddItemDef("Automatic Rifle", "AutomaticRifleItem", tlTyp, "AutomaticRifle", 0, 14); AddItemDef(
-                                   "Precise Rifle", "PreciseAutomaticRifleItem", tlTyp, "PreciseAutomaticRifle", 0, 14); AddItemDef("Rapid Fire Rifle", "RapidFireAutomaticRifleItem", tlTyp, "RapidFireAutomaticRifle", 0, 14); AddItemDef("Ultimate Rifle", "UltimateAutomaticRifleItem", tlTyp, "UltimateAutomaticRifle", 0, 14); AddItemDef("Welder 1", "WelderItem", tlTyp, "Welder", 0, 8);
-            AddItemDef("Welder 2", "Welder2Item", tlTyp, "Welder2", 0, 8); AddItemDef("Welder 3", "Welder3Item", tlTyp, "Welder3", 0, 8); AddItemDef("Welder 4", "Welder4Item", tlTyp, "Welder4", 0, 8); AddItemDef("Grinder 1", "AngleGrinderItem", tlTyp, "AngleGrinder", 0, 20); AddItemDef("Grinder 2", "AngleGrinder2Item", tlTyp, "AngleGrinder2", 0, 20); AddItemDef(
-                 "Grinder 3", "AngleGrinder3Item", tlTyp, "AngleGrinder3", 0, 20); AddItemDef("Grinder 4", "AngleGrinder4Item", tlTyp, "AngleGrinder4", 0, 20); AddItemDef("Drill 1", "HandDrillItem", tlTyp, "HandDrill", 0, 25); AddItemDef("Drill 2", "HandDrill2Item", tlTyp, "HandDrill2", 0, 25); AddItemDef("Drill 3", "HandDrill3Item", tlTyp, "HandDrill3", 0, 25); AddItemDef(
-                      "Drill 4", "HandDrill4Item", tlTyp, "HandDrill4", 0, 25); AddItemDef("Oxygen Bottle", "OxygenBottle", oxBtTyp, "OxygenBottle", 0, 120); AddItemDef("Hydrogen Bottle", "HydrogenBottle", hdBtTyp, "HydrogenBottle", 0, 120); AddItemDef("NATO 5.56x45mm", "NATO_5p56x45mm", amTyp, "NATO_5p56x45mmMagazine", 0, 0.2); AddItemDef("NATO 25x184mm", "NATO_25x184mm",
-                          amTyp, "NATO_25x184mmMagazine", 0, 16); AddItemDef("Missile 200mm", "Missile200mm", amTyp, "Missile200mm", 0, 60); AddItemDef("Cobalt Ore", "Cobalt", orTyp, "None", 0); AddItemDef("Gold Ore", "Gold", orTyp, "None", 0); AddItemDef("Ice", "Ice", orTyp, "None", 0); AddItemDef("Iron Ore", "Iron", orTyp, "None", 0); AddItemDef("Magnesium Ore", "Magnesium", orTyp,
-                                "None", 0); AddItemDef("Nickel Ore", "Nickel", orTyp, "None", 0); AddItemDef("Platinum Ore", "Platinum", orTyp, "None", 0); AddItemDef("Scrap Ore", "Scrap", orTyp, "None", 0); AddItemDef("Silicon Ore", "Silicon", orTyp, "None", 0); AddItemDef("Silver Ore", "Silver", orTyp, "None", 0); AddItemDef("Stone", "Stone", orTyp, "None", 0); AddItemDef(
-                                       "Uranium Ore", "Uranium", orTyp, "None", 0); AddItemDef("Cobalt Ingot", "Cobalt", igtTyp, "None", 0, 0.112); AddItemDef("Gold Ingot", "Gold", igtTyp, "None", 0, 0.052); AddItemDef("Gravel", "Stone", igtTyp, "None", 0, 0.37); AddItemDef("Iron Ingot", "Iron", igtTyp, "None", 0, 0.127); AddItemDef("Magnesium Powder", "Magnesium", igtTyp, "None", 0, 0.575);
-            AddItemDef("Nickel Ingot", "Nickel", igtTyp, "None", 0, 0.112); AddItemDef("Platinum Ingot", "Platinum", igtTyp, "None", 0, 0.047); AddItemDef("Silicon Wafer", "Silicon", igtTyp, "None", 0, 0.429); AddItemDef("Silver Ingot", "Silver", igtTyp, "None", 0, 0.095); AddItemDef("Uranium Ingot", "Uranium", igtTyp, "None", 0, 0.052);
+            AddItemDef("Bulletproof Glass","BulletproofGlass", cptTyp, "BulletproofGlass", 0, 8);
+            AddItemDef("Canvas", "Canvas", cptTyp, "Canvas", 0, 8);
+            AddItemDef("Computer", "Computer", cptTyp, "ComputerComponent", 0, 1);
+            AddItemDef("Construction Comp", "Construction", cptTyp, "ConstructionComponent", 0, 2);
+            AddItemDef("Detector Comp", "Detector", cptTyp,"DetectorComponent", 0, 6);
+            AddItemDef("Display", "Display", cptTyp, "Display", 0, 6); AddItemDef("Explosives", "Explosives", cptTyp, "ExplosivesComponent", 0, 2);
+            AddItemDef("Girder", "Girder", cptTyp, "GirderComponent", 0, 2);
+            AddItemDef("Gravity Gen. Comp", "GravityGenerator", cptTyp, "GravityGeneratorComponent", 0, 200);
+            AddItemDef("Interior Plate", "InteriorPlate", cptTyp, "InteriorPlate", 0, 5);
+            AddItemDef("Large Steel Tube", "LargeTube", cptTyp, "LargeTube", 0, 38);
+            AddItemDef("Medical Comp", "Medical", cptTyp, "MedicalComponent", 0, 160);
+            AddItemDef("Metal Grid", "MetalGrid", cptTyp, "MetalGrid", 0, 15);
+            AddItemDef("Motor", "Motor", cptTyp, "MotorComponent", 0, 8);
+            AddItemDef("Power Cell", "PowerCell", cptTyp, "PowerCell", 0, 45);
+            AddItemDef("Radio Comm. Comp", "RadioCommunication", cptTyp, "RadioCommunicationComponent", 0, 70);
+            AddItemDef("Reactor Comp", "Reactor", cptTyp, "ReactorComponent", 0, 8);
+            AddItemDef("Small Steel Tube", "SmallTube", cptTyp, "SmallTube", 0, 2);
+            AddItemDef("Solar Cell", "SolarCell", cptTyp, "SolarCell", 0, 20);
+            AddItemDef("Steel Plate", "SteelPlate", cptTyp, "SteelPlate", 0, 3);
+            AddItemDef("Superconductor", "Superconductor", cptTyp, "Superconductor", 0, 8);
+            AddItemDef("Thruster Comp", "Thrust", cptTyp, "ThrustComponent", 0, 10);
+            AddItemDef("Automatic Rifle", "AutomaticRifleItem", tlTyp, "AutomaticRifle", 0, 14);
+            AddItemDef("Precise Rifle", "PreciseAutomaticRifleItem", tlTyp, "PreciseAutomaticRifle", 0, 14);
+            AddItemDef("Rapid Fire Rifle", "RapidFireAutomaticRifleItem", tlTyp, "RapidFireAutomaticRifle", 0, 14);
+            AddItemDef("Ultimate Rifle", "UltimateAutomaticRifleItem", tlTyp, "UltimateAutomaticRifle", 0, 14);
+            AddItemDef("Welder 1", "WelderItem", tlTyp, "Welder", 0, 8);
+            AddItemDef("Welder 2", "Welder2Item", tlTyp, "Welder2", 0, 8);
+            AddItemDef("Welder 3", "Welder3Item", tlTyp, "Welder3", 0, 8);
+            AddItemDef("Welder 4", "Welder4Item", tlTyp, "Welder4", 0, 8);
+            AddItemDef("Grinder 1", "AngleGrinderItem", tlTyp, "AngleGrinder", 0, 20);
+            AddItemDef("Grinder 2", "AngleGrinder2Item", tlTyp, "AngleGrinder2", 0, 20);
+            AddItemDef("Grinder 3", "AngleGrinder3Item", tlTyp, "AngleGrinder3", 0, 20);
+            AddItemDef("Grinder 4", "AngleGrinder4Item", tlTyp, "AngleGrinder4", 0, 20);
+            AddItemDef("Drill 1", "HandDrillItem", tlTyp, "HandDrill", 0, 25);
+            AddItemDef("Drill 2", "HandDrill2Item", tlTyp, "HandDrill2", 0, 25);
+            AddItemDef("Drill 3", "HandDrill3Item", tlTyp, "HandDrill3", 0, 25);
+            AddItemDef("Drill 4", "HandDrill4Item", tlTyp, "HandDrill4", 0, 25);
+             AddItemDef("Oxygen Bottle", "OxygenBottle", oxBtTyp, "OxygenBottle", 0, 120);
+            AddItemDef("Hydrogen Bottle", "HydrogenBottle", hdBtTyp, "HydrogenBottle", 0, 120);
+            AddItemDef("NATO 5.56x45mm", "NATO_5p56x45mm", amTyp, "NATO_5p56x45mmMagazine", 0, 0.2);
+            AddItemDef("NATO 25x184mm", "NATO_25x184mm",amTyp, "NATO_25x184mmMagazine", 0, 16);
+            AddItemDef("Missile 200mm", "Missile200mm", amTyp, "Missile200mm", 0, 60);
+            AddItemDef("Cobalt Ore", "Cobalt", orTyp, "None", 0); AddItemDef("Gold Ore", "Gold", orTyp, "None", 0);
+            AddItemDef("Ice", "Ice", orTyp, "None", 0); AddItemDef("Iron Ore", "Iron", orTyp, "None", 0);
+            AddItemDef("Magnesium Ore", "Magnesium", orTyp,"None", 0);
+            AddItemDef("Nickel Ore", "Nickel", orTyp, "None", 0);
+            AddItemDef("Platinum Ore", "Platinum", orTyp, "None", 0);
+            AddItemDef("Scrap Ore", "Scrap", orTyp, "None", 0);
+            AddItemDef("Silicon Ore", "Silicon", orTyp, "None", 0);
+            AddItemDef("Silver Ore", "Silver", orTyp, "None", 0);
+            AddItemDef("Stone", "Stone", orTyp, "None", 0);
+            AddItemDef("Uranium Ore", "Uranium", orTyp, "None", 0);
+            AddItemDef("Gravel", "Stone", igtTyp, "None", 0, 0.37);
+            AddItemDef("Magnesium Powder", "Magnesium", igtTyp, "None", 0, 0.575);
+
+            AddItemDef("Cobalt Ingot", "Cobalt", igtTyp, "None", 0, 0.112);
+            AddItemDef("Gold Ingot", "Gold", igtTyp, "None", 0, 0.052);
+            AddItemDef("Iron Ingot", "Iron", igtTyp, "None", 0, 0.127);
+            AddItemDef("Nickel Ingot", "Nickel", igtTyp, "None", 0, 0.112);
+            AddItemDef("Platinum Ingot", "Platinum", igtTyp, "None", 0, 0.047);
+            AddItemDef("Silicon Wafer", "Silicon", igtTyp, "None", 0, 0.429);
+            AddItemDef("Silver Ingot", "Silver", igtTyp, "None", 0, 0.095);
+            AddItemDef("Uranium Ingot", "Uranium", igtTyp, "None", 0, 0.052);
         }
         public void EmptyUnusedAssemblers()
         {
@@ -1155,6 +1284,11 @@ itemRatio) return oDL[iST].vRt;
 ; sM++;
             }
         }
+        /// <summary>
+        /// Empty Assemblers
+        /// </summary>
+        /// <param name="block"></param>
+        /// <returns></returns>
         public bool EyAss(IMyTerminalBlock block)
         {
             try { float tmpA = ((IMyAssembler)block).CurrentProgress; return ((((IMyAssembler)block).Mode == asMd && tmpA < 0.05F) || (((IMyAssembler)block).Mode == dsMd && tmpA < 0.01)) && (CrVol(block.GetInventory(0)) / MxVol(block.GetInventory(0)) >= 0.95 || CrVol(block.GetInventory(1)) / MxVol(block.GetInventory(1)) >= 0.95); }
@@ -1416,6 +1550,8 @@ MyInventoryItem)origInv.GetItemAt(i); if (itm != null && itm.Type.ToString() == 
             else foreach (string s in fIdLT) if (s == itemId)
                         return true; return false;
         }
+
+        //string itemId = 
         public bool DistributeItems(IMyInventory origInv, MyInventoryItem item)
         {
             string iST = item.Type.SubtypeId, itemId = item.Type.ToString(); bool taMT = false, tmpA = false, tmpC = Fuel(itemId); try
@@ -1453,7 +1589,8 @@ MyInventoryItem)origInv.GetItemAt(i); if (itm != null && itm.Type.ToString() == 
                                     taMT = true; itemAmt -= movedAmount; movedAmount = 0;
                                 }
                             }
-                            else if (index != -1 && amt > tmpD * 1.15 && !LoadoutHome(bkLT[0].CustomData.ToLower(), iTY, iST)) { MyInventoryItem itm = (MyInventoryItem)inv.GetItemAt(index); if (itm != null) SortAway(inv, itm, iST, ref tmpC); }
+                            else if (index != -1 && amt > tmpD * 1.15 && !LoadoutHome(bkLT[0].CustomData.ToLower(), iTY, iST)) { MyInventoryItem itm = (MyInventoryItem)inv.GetItemAt(index);
+                                if (itm != null) SortAway(inv, itm, iST, ref tmpC); }
                         }
                         catch
                         {

@@ -49,6 +49,7 @@ namespace IngameScript
         private double icePrice = 0.05;
         private double _PRICE = 0.22; //defauilt price.
 
+
         // GTH ICE COST = 0.227
         // Processing fee = 1.05
 
@@ -72,42 +73,45 @@ namespace IngameScript
             List<IMyCargoContainer> myCargoContainers = new List<IMyCargoContainer>();
 
 
-        //renamed from Setup; constructor to conform with PB syntax
+        //publicly declare variables 
+
+        public IMyInventory theInventory;
+
+        public IMyGridTerminalSystem GTSystem;
+        public IMyCubeGrid Grid;
+
+        public IMyGasTank tankSmall;
+        public IMyGasTank tankBig;
+        
+        public IMyShipConnector conSmallFuelTankOutlet;
+        public IMyShipConnector conLargeFuelTankOutlet;
+        public IMyShipConnector conSmallFuelPortInlet;
+        public IMyShipConnector conLargeFuelPortInlet;
+        public IMyShipConnector conCustomerFuelPor;
+        public IMyShipConnector conSmallFuelTankInlet;
+        public IMyShipConnector conLargeFuelTankInlet;
+        public IMyShipConnector conCustomerFuelPort;
+
+        public IMyCargoContainer cargoBankBox;
+        public IMyCargoContainer cargoPaymentBox;
+
+        public IMyInventory invGlobal;
+        public List<MyInventoryItem> invItemList = new List<MyInventoryItem>();
+
+
+        public IMyTextPanel debugLCD;
+        public IMyTextPanel LCDSmFuel;
+        public IMyTextPanel LCDLgFuel;
+
+
         public Program()
         {
-
             //Instantiate variables 
+             SetBlocks();
 
-            GridTerminalSystem.GetBlocksOfType<IMyGasTank>(myTanks);
-            GridTerminalSystem.GetBlocksOfType<IMyShipConnector>(myConnectors);
-            GridTerminalSystem.GetBlocksOfType<IMyCargoContainer>(myCargoContainers);
-
-            //check for each name
-
-            //Hydrogen tanks
-            IMyGasTank tankBig = GridTerminalSystem.GetBlockWithName(BT) as IMyGasTank;      //[Big Tank]
-            IMyGasTank tankSmall = GridTerminalSystem.GetBlockWithName(ST) as IMyGasTank;    // [SMALL TANK]
-            
-            //Connectors 
-            IMyShipConnector conSmallFuelTankInlet = GridTerminalSystem.GetBlockWithName(SI) as IMyShipConnector;  // Small Fuel Tank Inlet
-            IMyShipConnector conLargeFuelTankInlet = GridTerminalSystem.GetBlockWithName(BI) as IMyShipConnector;  // Large Fuel Tank Inlet
-            IMyShipConnector conSmallFuelTankOutlet = GridTerminalSystem.GetBlockWithName(SO) as IMyShipConnector; // Small Fuel Tank Outlet
-            IMyShipConnector conLargeFuelTankOutlet = GridTerminalSystem.GetBlockWithName(BO) as IMyShipConnector; // Big Fuel Tank Outlet
-            IMyShipConnector conSmallFuelPortInlet = GridTerminalSystem.GetBlockWithName(SFI) as IMyShipConnector; // Small Fuel Port Inlet
-            IMyShipConnector conLargeFuelPortInlet = GridTerminalSystem.GetBlockWithName(LFI) as IMyShipConnector; // Large Fuel Port Inlet
-            IMyShipConnector conCustomerFuelPort = GridTerminalSystem.GetBlockWithName("Connector [Fuel Port Inlet]") as IMyShipConnector;
-
-            //Cargo containers
-            IMyCargoContainer cargoBankBox = GridTerminalSystem.GetBlockWithName("Bank Box") as IMyCargoContainer;
-            IMyCargoContainer cargoPaymentBox = GridTerminalSystem.GetBlockWithName("Payment Box") as IMyCargoContainer;
-
-            //debug, fueling, primetankstatus
-
-            IMyTextPanel debugLCD = GridTerminalSystem.GetBlockWithName("debug LCD") as IMyTextPanel;
-            IMyTextPanel LCDSmFuel = GridTerminalSystem.GetBlockWithName("S fuel LCD") as IMyTextPanel;          //LCD Small Fuel
-            IMyTextPanel LCDLgFuel = GridTerminalSystem.GetBlockWithName("L fuel LCD") as IMyTextPanel;          // LCD Large Fuel
-            
+            //add runtime stuff here later - VTM
         }
+
 
         /// <summary>
         /// Entry point in the script.  
@@ -117,7 +121,7 @@ namespace IngameScript
         public void Main(string argument, UpdateType updateSource)
         {
             //probably use an if() or a case switch to figure out which state we're supposed to be in
-            //we'll still need a default thing. 
+            //though we'll still need a default thing. 
 
 
             //setup 
@@ -125,13 +129,26 @@ namespace IngameScript
             {
                 //would powering off the connector be more certain to prevent unwanted connections?
                 connector.Disconnect();
+                Echo(connector.Name + " disconnected." + "\n");
+
             }
+            Echo("All connectors unlocked.");
+
 
             // SETUP ALL TANKS TO NOT STOCKPILE!!! NO STEALING FUEL
             foreach (IMyGasTank hydrogenTank in myTanks)
             {
                 hydrogenTank.Stockpile = false;
+                Echo(hydrogenTank.Name + " stockpiling off." + "\n");
+
             }
+            Echo("All Hydrogen tanks set to no stockpile.");
+
+            if(argument=="check")
+            {
+                EchoNumberCreditsInPaymentDEBUG();
+            }
+
             setup = true;  //is this supposed to be an indicator that the setup ran successfully?  if so, we should rename this. 
 
 
@@ -144,12 +161,84 @@ namespace IngameScript
             // 250,000 units of hydrogen per Large Tank
 
         }
+        /// <summary>
+        /// DEBUG METHOD: checks the number of credits in the PaymentBox and outputs it to the PB display.
+        /// </summary>
+        private void EchoNumberCreditsInPaymentDEBUG()
+        {
+            //IMyInventory invPayment = cargoPaymentBox.GetInventory();
+            //invItemList = invPayment.
+            //List<MyInventoryItem> paymentItems = invPayment.GetItems(invItemList);
+
+            Echo("number of credits: " + CntInInv("Credit", cargoPaymentBox.GetInventory()));
+
+        }
 
 
 
         //================================================================//
         /*                      NON-REQUIRED METHODS                      */
         //================================================================//
+
+        public double CntInInv(string itemId, IMyInventory origInv)
+        {
+            int tmpA = 0;
+            return CntInInv(itemId, origInv, ref tmpA);
+        }
+        public double CntInInv(string itemId, IMyInventory origInv, ref int index)
+        {
+            double count = 0;
+            List<MyInventoryItem> inventoryItemList = new List<MyInventoryItem>();
+            origInv.GetItems(inventoryItemList, (t => t.Type.ToString() == itemId));
+            for (int i = 0; i < inventoryItemList.Count; i++) count += (double)inventoryItemList[i].Amount; for (int i = 0; i < origInv.ItemCount; i++)
+            {
+                MyInventoryItem itm = (MyInventoryItem)origInv.GetItemAt(i); if (itm != null && itm.Type.ToString() == itemId) { index = i; break; }
+            }
+            return count;
+        }
+
+
+            private void SetBlocks()
+        {
+            GTSystem = GridTerminalSystem;
+
+            //inventory
+            
+            //Lists
+            GTSystem.GetBlocksOfType<IMyGasTank>(myTanks);
+            GTSystem.GetBlocksOfType<IMyShipConnector>(myConnectors);
+            GTSystem.GetBlocksOfType<IMyCargoContainer>(myCargoContainers);
+
+            //Hydrogen tanks
+            tankBig = GTSystem.GetBlockWithName(BT) as IMyGasTank;      //[Big Tank]
+            tankSmall = GTSystem.GetBlockWithName(ST) as IMyGasTank;    // [SMALL TANK]
+
+
+            //Connectors 
+            conSmallFuelTankInlet = GTSystem.GetBlockWithName(SI) as IMyShipConnector;  // Small Fuel Tank Inlet
+            conLargeFuelTankInlet = GTSystem.GetBlockWithName(BI) as IMyShipConnector;  // Large Fuel Tank Inlet 
+            conSmallFuelTankOutlet = GTSystem.GetBlockWithName(SO) as IMyShipConnector; // Small Fuel Tank Outlet
+            conLargeFuelTankOutlet = GTSystem.GetBlockWithName(BO) as IMyShipConnector; // Big Fuel Tank Outlet
+            conSmallFuelPortInlet = GTSystem.GetBlockWithName(SFI) as IMyShipConnector; // Small Fuel Port Inlet
+            conLargeFuelPortInlet = GTSystem.GetBlockWithName(LFI) as IMyShipConnector; // Large Fuel Port Inlet
+            try
+            {
+                conCustomerFuelPort = GridTerminalSystem.GetBlockWithName("Connector [Fuel Port Inlet]") as IMyShipConnector;
+                //Cargo containers
+                cargoBankBox = GTSystem.GetBlockWithName("Bank Box") as IMyCargoContainer;
+                cargoPaymentBox = GTSystem.GetBlockWithName("Payment Box") as IMyCargoContainer;
+
+                //debug, fueling, primetankstatus
+
+                debugLCD = GTSystem.GetBlockWithName("debug LCD") as IMyTextPanel;
+                LCDSmFuel = GTSystem.GetBlockWithName("S fuel LCD") as IMyTextPanel;          //LCD Small Fuel
+                LCDLgFuel = GTSystem.GetBlockWithName("L fuel LCD") as IMyTextPanel;          // LCD Large Fuel
+            }
+            catch (Exception e)
+            {
+                Echo("Error setting blocks. Verify correct names.");
+            }
+        }
         
         private void UpdatePrice(int newPrice)
         {
@@ -216,6 +305,8 @@ namespace IngameScript
              *      
              */
         }
+
+
         /// <summary>
         /// Method that starts the Sales state 
         /// </summary>
@@ -247,10 +338,14 @@ namespace IngameScript
 
              */
         }
-
-        public void UpdateLCD()
+       
+        /// <summary>
+        /// Echoes text to an LCD by name
+        /// </summary>
+        /// <param name="lcdName">name of the LCD block to update</param>
+        public void UpdateLCD(string lcdName)
         {
-
+            
         }
     }
 }
