@@ -1,0 +1,114 @@
+public string co = "Connector [SMALL OUTLET]";
+public string ci = "Connector [SMALL INLET]";
+public string ft = "Tank [SMALL TANK]";
+public double fuellevel = 0;
+public bool smalltransaction = true;
+public bool SetupComplete = false;
+public bool PrimedState = false;
+public bool SaleState = false;
+public double smalltank = 300000;  // SMALL TANK!!!
+public double largetank = 2500000;  // LARGE TANK!!!
+
+
+// Legend for Logic
+//SetupComplete (Variable) - checks declarations, prevents crash, states debug code
+//Checks (Method) - checks state, maintains correct state, w/ loop fix fallback (Safety Reboot)
+//Setup (Method) - all declarations regarding SetupComplete Etc
+//fuelt - fuel tank
+//OpenInlet (Method) - Turns On, and Locks Inlet Connector
+
+
+public void Main(string argument)
+        {
+         if (!SetupComplete) Setup();
+        Checks();
+ 
+        }
+
+void Setup()
+        {
+
+            SetupComplete = true;
+        }
+
+void Checks()
+            {
+           IMyShipConnector coni = GridTerminalSystem.GetBlockWithName(ci) as IMyShipConnector; 
+           IMyShipConnector cono = GridTerminalSystem.GetBlockWithName(co) as IMyShipConnector;
+           IMyGasTank fuelt = GridTerminalSystem.GetBlockWithName(ft) as IMyGasTank;       
+              
+                   if (fuelt.FilledRatio == 1f)  //Checking Fuel Tank Status, if full then set primed state, set ready to fuel state
+                 {
+                    
+                    PrimedState = true;    // Tells system that is primed
+                    SaleState = false;     // tells system ready to fuel (Incase of disconnect happens durring fueling) Maybe not needed
+                    CloseInlet();               //Close the main line connector! 
+                  }
+
+              if (fuelt.FilledRatio < 1f)
+                    {
+                        UpdateLCD();                            
+                    }
+                
+            }               
+
+
+void OpenInlet() // Essentially Passive State
+    { 
+                IMyShipConnector coni = GridTerminalSystem.GetBlockWithName(ci) as IMyShipConnector; 
+                IMyShipConnector cono = GridTerminalSystem.GetBlockWithName(co) as IMyShipConnector;
+                IMyGasTank fuelt = GridTerminalSystem.GetBlockWithName(ft) as IMyGasTank;       
+                cono.Disconnect();
+                coni.Connect();
+                fuelt.Stockpile = true;
+                Checks();
+                // while (fuelt.FilledRatio < 1)   * Not sure if needed? Doesn't StartFuel check this?
+                 //   {
+                   //     UpdateLCD();
+                  //  }
+     }
+void CloseInlet()  //Essentially Primed State
+    {
+           IMyShipConnector coni = GridTerminalSystem.GetBlockWithName(ci) as IMyShipConnector; 
+           IMyShipConnector cono = GridTerminalSystem.GetBlockWithName(co) as IMyShipConnector;
+           IMyGasTank fuelt = GridTerminalSystem.GetBlockWithName(ft) as IMyGasTank;       
+            fuelt.Stockpile = false;
+            coni.Disconnect();
+            PrimedState = true;
+            
+    }           
+//void SaleStateCheck()  //To be renamed!!!
+// {
+//           IMyShipConnector coni = GridTerminalSystem.GetBlockWithName(ci) as IMyShipConnector; 
+//           IMyShipConnector cono = GridTerminalSystem.GetBlockWithName(co) as IMyShipConnector;
+//           IMyGasTank fuelt = GridTerminalSystem.GetBlockWithName(ft) as IMyGasTank;       
+//            if (transcargo == correct.ammount0;
+//                {
+//                        StartFuel();
+//                    }
+//            coni.Disconnect();
+
+// }
+           
+// void StartFuel()
+//        {
+//           IMyShipConnector coni = GridTerminalSystem.GetBlockWithName(ci) as IMyShipConnector; 
+//           IMyShipConnector cono = GridTerminalSystem.GetBlockWithName(co) as IMyShipConnector;
+//           IMyGasTank fuelt = GridTerminalSystem.GetBlockWithName(ft) as IMyGasTank;       
+//           IMyTimerBlock  timer = GridTerminalSystem.GetBlockWithName(tb) as IMyTimerBlock;
+//           coni.Disconnect();
+//              cono.Connect();
+              
+//                    if (fuelt.FilledRatio > 0) 
+//      *DateTime.Now+20  (Fuels until Tank = 0, If Tank > 0 for DateTime.Now+20, Return to Passive State
+//                        {
+//                            UpdateLCD();
+//                         }
+//        }
+void UpdateLCD()
+       {
+            IMyGasTank fuelt = GridTerminalSystem.GetBlockWithName(ft) as IMyGasTank;
+            IMyTextPanel asf =GridTerminalSystem.GetBlockWithName("LCD TEST") as IMyTextPanel;
+            int fuellevel = (int)( fuelt.FilledRatio * 100 );
+                asf.WritePublicText("H2 " + Convert.ToString(fuellevel) + "%");
+        }
