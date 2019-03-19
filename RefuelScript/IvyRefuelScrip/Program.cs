@@ -552,7 +552,7 @@ namespace IngameScript
                     GridTerminalSystem.GetBlocksOfType<IMyReflectorLight>(spotlights, l => connectedGrids.Contains(baseGrid));
                 }
             }
-            654
+
             // Get reactors
             if (enableEmergencyReactors)
             {

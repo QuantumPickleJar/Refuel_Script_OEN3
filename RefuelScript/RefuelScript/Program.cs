@@ -45,8 +45,8 @@ namespace IngameScript
         public bool smalltank = true;
         public bool setup = false;
 
-        private double processingFee = 0.05;
-        private double icePrice = 0.05;
+        private decimal processingFee = (decimal)0.05;
+        //private double icePrice = 0.05;
         private double _PRICE = 0.22; //defauilt price.
 
 
@@ -69,13 +69,14 @@ namespace IngameScript
          *          (capacity == 0 || capacity >= 0 && 'timer elapsed')
          */
             List<IMyGasTank> myTanks = new List<IMyGasTank>();
+            List<IMyGasTank> myOxygenTanks= new List<IMyGasTank>();
+            List<IMyGasTank> myHydrogenTanks= new List<IMyGasTank>();
             List<IMyShipConnector> myConnectors = new List<IMyShipConnector>();
             List<IMyCargoContainer> myCargoContainers = new List<IMyCargoContainer>();
 
 
         //publicly declare variables 
-
-        public IMyInventory theInventory;
+        
 
         public IMyGridTerminalSystem GTSystem;
         public IMyCubeGrid Grid;
@@ -87,18 +88,13 @@ namespace IngameScript
         public IMyShipConnector conLargeFuelTankOutlet;
         public IMyShipConnector conSmallFuelPortInlet;
         public IMyShipConnector conLargeFuelPortInlet;
-        public IMyShipConnector conCustomerFuelPor;
         public IMyShipConnector conSmallFuelTankInlet;
         public IMyShipConnector conLargeFuelTankInlet;
         public IMyShipConnector conCustomerFuelPort;
 
         public IMyCargoContainer cargoBankBox;
         public IMyCargoContainer cargoPaymentBox;
-
-        public IMyInventory invGlobal;
-        public List<MyInventoryItem> invItemList = new List<MyInventoryItem>();
-
-
+        
         public IMyTextPanel debugLCD;
         public IMyTextPanel LCDSmFuel;
         public IMyTextPanel LCDLgFuel;
@@ -120,43 +116,35 @@ namespace IngameScript
         /// <param name="updateSource"></param>
         public void Main(string argument, UpdateType updateSource)
         {
-            //probably use an if() or a case switch to figure out which state we're supposed to be in
-            //though we'll still need a default thing. 
+            //TODO: add case: switch or if() structure to determine which state we need to be in
+            //Can also be converted to a method 
 
+            //DetermineState();
 
             //setup 
-            foreach (IMyShipConnector connector in myConnectors)
-            {
-                //would powering off the connector be more certain to prevent unwanted connections?
-                connector.Disconnect();
-                Echo(connector.Name + " disconnected." + "\n");
-
-            }
-            Echo("All connectors unlocked.");
-
-
-            // SETUP ALL TANKS TO NOT STOCKPILE!!! NO STEALING FUEL
-            foreach (IMyGasTank hydrogenTank in myTanks)
-            {
-                hydrogenTank.Stockpile = false;
-                Echo(hydrogenTank.Name + " stockpiling off." + "\n");
-
-            }
-
-            Echo("All Hydrogen tanks set to no stockpile.");
+            Setup();
+             //is this supposed to be an indicator that the setup ran successfully?  if so, we should rename this. 
             
-            
+            //======================= ARGUMENT HANDLING ==========================//
 
+            //DEBUG METHOD:
+            //print # of credits in [Transaction]
             if (argument == "check")
             {
-                //                EchoNumberCreditsInPaymentDEBUG();
-                CheckForCredits();
+                Echo("[Transaction]: " + GetNumberOfCredits(TRANS).ToString());
+                return;
             }
 
+            //print # credits in [Bank]
+            if (argument == "vault")
+            {
+                Echo("[Bank]: " + GetNumberOfCredits(BANK).ToString());
 
+                return;
+            }
 
+            //=======================   MAIN METHOD  =========================//
 
-            setup = true;  //is this supposed to be an indicator that the setup ran successfully?  if so, we should rename this. 
 
 
             //
@@ -169,117 +157,81 @@ namespace IngameScript
 
         }
 
-        private void CheckForCredits()
+        /// <summary>
+        /// Sets all tanks to no-stockpile, and disconnects all connectors.
+        /// </summary>
+        private void Setup()
         {
-            //cargoBankBox = one we're moving TO 
-            //cargoTransBox = one we're taking FROM 
-            //use TRANS box to "receive" the credits 
-            GTSystem.GetBlocksOfType<IMyCargoContainer>(myCargoContainers, block => block.CustomName.EndsWith(TRANS));
-            if (myCargoContainers.Count < 1)
+            foreach (IMyShipConnector connector in myConnectors)
             {
-                Echo("No container matching TRANS found");
-                Echo("(TRANS) = " + TRANS);
+                connector.Disconnect();
+                //Echo(connector.Name + " disconnected." + "\n");
+
             }
-            Echo("myCargoContainer =: " + myCargoContainers[0].CustomName);
-            IMyInventory invTrans = myCargoContainers[0].GetInventory(0);
+            //Echo("All connectors unlocked.");
 
 
-            //get the FROM 
-            GTSystem.GetBlocksOfType<IMyCargoContainer>(myCargoContainers, block => block.CustomName.EndsWith(BANK));
-            Echo("Begin test:");
-
-            //set the inventory of the transaction cargo 
-            List<MyInventoryItem> itemlistTrans = new List<MyInventoryItem>();
-
-            //get complete list of items from the transaction cargo regardless of item properties 
-            invTrans.GetItems(itemlistTrans, null);
-            Echo("Retrieved TRANS inv");
-
-            foreach (var item in itemlistTrans)
+            //Set every Hydrogen tank's Stockpiling to Off
+            foreach (IMyGasTank hydrogenTank in myTanks)
             {
-                //Echo("Item " + item.ToString());
-                Echo("Item SubType: " + item.Type.SubtypeId);
+                //Echo("Name: " + hydrogenTank.CustomName + "\n" +
+                //    "Dinfo: " + hydrogenTank.DetailedInfo + "\n" +
+                //    "Cinfo: " + hydrogenTank.CustomInfo );
+
+                hydrogenTank.Stockpile = false;
+                //  Echo(hydrogenTank.CustomName + " stockpiling off." + "\n");
             }
+            setup = true;
+            //Echo("All Hydrogen tanks set to no stockpile.");
         }
 
-
         /// <summary>
-        /// starts/resets a counter to 0 and counts the number of credits in the inventory of a cargo container of a certain name
+        /// Checks how many Credits are present in cargo container by name
         /// </summary>
-        /// <returns></returns>
+        /// <param name="name">Name of the cargo container</param>
+        /// <returns>number of credits, -1 if cargo container couldn't be found.</returns>
         private int GetNumberOfCredits(string name)
         {
-            int numCredits = 0;
-            //cargoBankBox = one we're moving TO 
-            //cargoTransBox = one we're taking FROM 
-            //use TRANS box to "receive" the credits 
+            //Verify that the specified container exists
             GTSystem.GetBlocksOfType<IMyCargoContainer>(myCargoContainers, block => block.CustomName.EndsWith(name));
             if (myCargoContainers.Count < 1)
             {
-                Echo("No container matching TRANS found");
-                Echo("(TRANS) = " + TRANS);
+                //if it doesn't exist, output to Programming Block
+                Echo("Container " + name + " not found.");
+                return -1;
             }
-            Echo("myCargoContainer =: " + myCargoContainers[0].CustomName);
+            //Retrieve the inventory of the container
             IMyInventory invTrans = myCargoContainers[0].GetInventory(0);
-
-
-            //get the FROM 
-            GTSystem.GetBlocksOfType<IMyCargoContainer>(myCargoContainers, block => block.CustomName.EndsWith(BANK));
-            Echo("Begin test:");
 
             //set the inventory of the transaction cargo 
             List<MyInventoryItem> itemlistTrans = new List<MyInventoryItem>();
 
             //get complete list of items from the transaction cargo regardless of item properties 
             invTrans.GetItems(itemlistTrans, null);
-            Echo("Retrieved TRANS inv");
-
-
-            foreach (var item in itemlistTrans)
-            {
-                //Echo("Item " + item.ToString());
-                Echo("Item SubType: " + item.Type.SubtypeId);
-            }
+            
+            //return how many items of ItemType "Credit" as an int (converted from long) to save memory 
+            return invTrans.GetItemAmount(MyItemType.MakeIngot("Credit")).ToIntSafe();
         }
-        
 
-        
+
+
 
         //================================================================//
         /*                      NON-REQUIRED METHODS                      */
         //================================================================//
 
-        public double CntInInv(string itemId, IMyInventory origInv)
-        {
 
-            
-
-            int tmpA = 0;
-            return CntInInv(itemId, origInv, ref tmpA);
-        }
-        public double CntInInv(string itemId, IMyInventory origInv, ref int index)
-        {
-
-
-            double count = 0;
-            List<MyInventoryItem> inventoryItemList = new List<MyInventoryItem>();
-            origInv.GetItems(inventoryItemList, (t => t.Type.ToString() == itemId));
-            for (int i = 0; i < inventoryItemList.Count; i++) count += (double)inventoryItemList[i].Amount; for (int i = 0; i < origInv.ItemCount; i++)
-            {
-                MyInventoryItem itm = (MyInventoryItem)origInv.GetItemAt(i); if (itm != null && itm.Type.ToString() == itemId) { index = i; break; }
-            }
-            return count;
-        }
-
-
-            private void SetBlocks()
+        private void SetBlocks()
         {
             GTSystem = GridTerminalSystem;
 
             //inventory
-            
+
             //Lists
             GTSystem.GetBlocksOfType<IMyGasTank>(myTanks);
+            GTSystem.GetBlocksOfType<IMyGasTank>(myOxygenTanks, tank => tank.DetailedInfo.Contains("Oxygen"));
+            GTSystem.GetBlocksOfType<IMyGasTank>(myHydrogenTanks, tank => tank.DetailedInfo.Contains("Hydrogen") && 
+                                                                         (tank.CustomName == ST || tank.CustomName == BT));
             GTSystem.GetBlocksOfType<IMyShipConnector>(myConnectors);
             GTSystem.GetBlocksOfType<IMyCargoContainer>(myCargoContainers);
 
@@ -313,15 +265,21 @@ namespace IngameScript
                 Echo("Error setting blocks. Verify correct names.");
             }
         }
-        
+
+        /// <summary>
+        /// Changes the cost of 1L of Hydrogen
+        /// </summary>
+        /// <param name="newPrice"></param>
         private void UpdatePrice(int newPrice)
         {
-
+            this._PRICE = (double)newPrice;
         }
+
+
 
         private void UpdateProcessingFee(decimal newFee)
         {
-            //this.
+            this.processingFee = newFee;
         }
 
 
