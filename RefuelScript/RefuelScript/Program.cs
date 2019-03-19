@@ -37,7 +37,7 @@ namespace IngameScript
         public const string LCDLS = "LCD [LARGE SALE]";
         public const string PTSTAT = "LCD [PRIME TANK STATUS]";
         public const string TRANS = "[Transaction]";
-        public const string Bank = "[Bank]";
+        public const string BANK = "[Bank]";
         public bool debug = false;
         public bool passive = false;
         public bool primed = false;
@@ -146,7 +146,32 @@ namespace IngameScript
 
             if(argument=="check")
             {
-                EchoNumberCreditsInPaymentDEBUG();
+                //                EchoNumberCreditsInPaymentDEBUG();
+                //cargoBankBox = one we're moving TO 
+                //cargoTransBox = one we're taking FROM 
+                //use TRANS box to "receive" the credits 
+                GTSystem.GetBlocksOfType<IMyCargoContainer>(myCargoContainers, block => block.CustomName.EndsWith(TRANS));
+                if(myCargoContainers.Count < 1)
+                {
+                    Echo("No container matching TRANS found");
+                }
+                Echo("myCargoContainer =: " + myCargoContainers[0].CustomName);
+                IMyInventory invTrans = myCargoContainers[0].GetInventory(0);
+
+
+                //get the FROM 
+                GTSystem.GetBlocksOfType<IMyCargoContainer>(myCargoContainers, block => block.CustomName.EndsWith(BANK));
+                Echo("Begin test:");
+                foreach (IMyCargoContainer bankBox in myCargoContainers)
+                {
+                    invTrans = bankBox.GetInventory(0).GetItems();
+                    List<MyInventoryItem> myItems;
+                    Echo("From = " + bankBox.CustomName);
+
+                    Echo("Contains: " + invTrans.GetItems(myItems,)
+                }
+
+
             }
 
             setup = true;  //is this supposed to be an indicator that the setup ran successfully?  if so, we should rename this. 
@@ -169,7 +194,7 @@ namespace IngameScript
             //IMyInventory invPayment = cargoPaymentBox.GetInventory();
             //invItemList = invPayment.
             //List<MyInventoryItem> paymentItems = invPayment.GetItems(invItemList);
-
+            
             Echo("number of credits: " + CntInInv("Credit", cargoPaymentBox.GetInventory()));
 
         }
@@ -182,11 +207,16 @@ namespace IngameScript
 
         public double CntInInv(string itemId, IMyInventory origInv)
         {
+
+            
+
             int tmpA = 0;
             return CntInInv(itemId, origInv, ref tmpA);
         }
         public double CntInInv(string itemId, IMyInventory origInv, ref int index)
         {
+
+
             double count = 0;
             List<MyInventoryItem> inventoryItemList = new List<MyInventoryItem>();
             origInv.GetItems(inventoryItemList, (t => t.Type.ToString() == itemId));

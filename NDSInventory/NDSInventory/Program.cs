@@ -832,7 +832,8 @@ countOutputQueue[0].Amount, ((IMyAssembler)bkLT[0]).Mode != asMd);
                 {
                     try
                     {
-                        if (cIvImLt.Count == 0 && ctOtIv.Count == 0 && aBL[i].InventoryCount > 1) aBL[i].GetInventory(1).GetItems(ctOtIv); if (cIvImLt.Count == 0) aBL[i].GetInventory(0).GetItems(cIvImLt); while (ctOtIv.Count > 0) { cIvImLt.Add(ctOtIv[0]); ctOtIv.RemoveAt(0); if (!AvailableActions()) break; }
+                        if (cIvImLt.Count == 0 && ctOtIv.Count == 0 && aBL[i].InventoryCount > 1) aBL[i].GetInventory(1).GetItems(ctOtIv);
+                        if (cIvImLt.Count == 0) aBL[i].GetInventory(0).GetItems(cIvImLt); while (ctOtIv.Count > 0) { cIvImLt.Add(ctOtIv[0]); ctOtIv.RemoveAt(0); if (!AvailableActions()) break; }
                         if (ctOtIv.Count == 0) while (
 cIvImLt.Count > 0) { try { if (!Discount(aBL[i], cIvImLt[0])) AddTempItemCount(cIvImLt[0], (double)cIvImLt[0].Amount); } catch { } cIvImLt.RemoveAt(0); if (!AvailableActions()) break; }
                         if (cIvImLt.Count == 0 && ctOtIv.Count == 0) cCI++; if (!AvailableActions()) break;
@@ -1301,18 +1302,41 @@ itemRatio) return oDL[iST].vRt;
         }
 
 
-        public List<MyInventoryItem> invItemList = new List<MyInventoryItem>(); public void ScourInventories(bool distribute)
+        public List<MyInventoryItem> invItemList = new List<MyInventoryItem>();
+
+        public void ScourInventories(bool distribute)
         {
             try
             {
                 if (DateTime.Now >= scourTime && ((!distribute && aBL.Count > 0) || (distribute && cIDS.Count > 0)))
                 {
-                    if (!distribute) tBlk = aBL[scrIx]; else tBlk = aBL[cIDS[scrIx]]; try
+                    if (!distribute) tBlk = aBL[scrIx];
+                    else tBlk = aBL[cIDS[scrIx]];
+                    try
                     {
-                        IMyInventory origInv = tBlk.GetInventory(0); if (invItemList.Count == 0) { if (curInv == 1 && tBlk.InventoryCount > 1) { origInv = tBlk.GetInventory(1); origInv.GetItems(invItemList); } else origInv.GetItems(invItemList); } while (invItemList.Count > 0)
+                        IMyInventory origInv = tBlk.GetInventory(0);
+                        if (invItemList.Count == 0)
                         {
-                            string iTY = invItemList[0].Type.TypeId, iST = invItemList[0].Type.SubtypeId; try { RecordItem(invItemList[0], tBlk, origInv); } catch { }
-                            if (!distribute && ((curInv == 1 && !(tBlk is IMyAssembler)) || NeedsHome(invItemList[0], tBlk, curInv))) { bool tmpA = false; FindItemHome(tBlk, curInv, invItemList[0], ref tmpA); if (!tmpA) invItemList.RemoveAt(0); }
+                            if (curInv == 1 && tBlk.InventoryCount > 1)
+                            {
+                                origInv = tBlk.GetInventory(1); origInv.GetItems(invItemList);
+                            }
+                            else origInv.GetItems(invItemList);
+                        }
+                        while (invItemList.Count > 0)
+                        {
+                            string iTY = invItemList[0].Type.TypeId, iST = invItemList[0].Type.SubtypeId;
+                            try
+                            {
+                                RecordItem(invItemList[0], tBlk, origInv);
+                            }
+                            catch { }
+                            if (!distribute && ((curInv == 1 && !(tBlk is IMyAssembler)) || NeedsHome(invItemList[0], tBlk, curInv)))
+                            {
+                                bool tmpA = false;
+                                FindItemHome(tBlk, curInv, invItemList[0], ref tmpA);
+                                if (!tmpA) invItemList.RemoveAt(0);
+                            }
                             else if (distribute && Distributable(invItemList[0], tBlk)) { if (DistributeItems(origInv, invItemList[0])) invItemList.RemoveAt(0); }
                             else invItemList.RemoveAt(0);
                             if (!AvailableActions()) break;
@@ -1530,14 +1554,19 @@ block is IMyGasGenerator)) FillCanister(origInv, item);
             catch { }
             return false;
         }
-        public double CntInInv(string itemId, IMyInventory origInv) { int tmpA = 0; return CntInInv(itemId, origInv, ref tmpA); }
-        public double CntInInv(
-string itemId, IMyInventory origInv, ref int index)
+        public double CntInInv(string itemId, IMyInventory origInv)
         {
-            double count = 0; List<MyInventoryItem> inventoryItemList = new List<MyInventoryItem>(); origInv.GetItems(inventoryItemList, (t => t.Type.ToString() == itemId)); for (int i = 0; i < inventoryItemList.Count; i++) count += (double)inventoryItemList[i].Amount; for (int i = 0; i < origInv.ItemCount; i++)
+            int tmpA = 0;
+            return CntInInv(itemId, origInv, ref tmpA);
+        }
+        public double CntInInv(string itemId, IMyInventory origInv, ref int index)
+        {
+            double count = 0;
+            List<MyInventoryItem> inventoryItemList = new List<MyInventoryItem>();
+            origInv.GetItems(inventoryItemList, (t => t.Type.ToString() == itemId));
+            for (int i = 0; i < inventoryItemList.Count; i++) count += (double)inventoryItemList[i].Amount; for (int i = 0; i < origInv.ItemCount; i++)
             {
-                MyInventoryItem itm = (
-MyInventoryItem)origInv.GetItemAt(i); if (itm != null && itm.Type.ToString() == itemId) { index = i; break; }
+                MyInventoryItem itm = (MyInventoryItem)origInv.GetItemAt(i); if (itm != null && itm.Type.ToString() == itemId) { index = i; break; }
             }
             return count;
         }
