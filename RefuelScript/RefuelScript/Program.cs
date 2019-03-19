@@ -43,7 +43,7 @@ namespace IngameScript
         public bool primed = false;
         public bool sale = false;
         public bool smalltank = true;
-        public bool setup = false;
+        public bool setupComplete = false;
 
         private decimal processingFee = (decimal)0.05;
         //private double icePrice = 0.05;
@@ -102,8 +102,10 @@ namespace IngameScript
 
         public Program()
         {
+
+            setupComplete = false;
             //Instantiate variables 
-             SetBlocks();
+            SetBlocks();
 
             //add runtime stuff here later - VTM
         }
@@ -123,25 +125,44 @@ namespace IngameScript
 
             //setup 
             Setup();
-             //is this supposed to be an indicator that the setup ran successfully?  if so, we should rename this. 
-            
+
             //======================= ARGUMENT HANDLING ==========================//
 
             //DEBUG METHOD:
-            //print # of credits in [Transaction]
-            if (argument == "check")
+            switch (argument)
             {
-                Echo("[Transaction]: " + GetNumberOfCredits(TRANS).ToString());
-                return;
-            }
+                //print # of credits in [Transaction]
+                case "check":
+                    Echo("[Transaction]: " + GetNumberOfCredits(TRANS).ToString());
+                    return;
 
-            //print # credits in [Bank]
-            if (argument == "vault")
+                //print # credits in [Bank]
+                case "vault":
+                    Echo("[Bank]: " + GetNumberOfCredits(BANK).ToString());
+                    return;
+
+                //print current price and processing fee
+                case "prices":
+                    GetPriceSummary();
+                    break;
+                default:
+                    break;
+            }
+            //update price of ice (syntax: "ice_[integer]")
+            if (argument.Contains("ice_"))
             {
-                Echo("[Bank]: " + GetNumberOfCredits(BANK).ToString());
-
-                return;
+                int i;
+                if (int.TryParse(argument.Substring(argument.IndexOf("_") + 1), out i))
+                {
+                    UpdatePrice(i);
+                }
+                else
+                {
+                    Echo("Invalid price. ('ice_PRICE')");
+                    return;
+                }
             }
+            //change price of ice (will change this to be done through an LCD's CustomData later)
 
             //=======================   MAIN METHOD  =========================//
 
@@ -171,17 +192,16 @@ namespace IngameScript
             //Echo("All connectors unlocked.");
 
 
-            //Set every Hydrogen tank's Stockpiling to Off
-            foreach (IMyGasTank hydrogenTank in myTanks)
+            //Set every Hydrogen and Oxygen tank's Stockpiling to Off
+            foreach (IMyGasTank tank in myTanks)
             {
-                //Echo("Name: " + hydrogenTank.CustomName + "\n" +
-                //    "Dinfo: " + hydrogenTank.DetailedInfo + "\n" +
-                //    "Cinfo: " + hydrogenTank.CustomInfo );
+                Echo("Name: " + tank.CustomName + "\n" +
+                    "Dinfo: " + tank.DetailedInfo + "\n" 
+                    /*+"Cinfo: " + tank.CustomInfo*/);
 
-                hydrogenTank.Stockpile = false;
-                //  Echo(hydrogenTank.CustomName + " stockpiling off." + "\n");
+                tank.Stockpile = false;
             }
-            setup = true;
+            setupComplete = true;
             //Echo("All Hydrogen tanks set to no stockpile.");
         }
 
@@ -232,6 +252,12 @@ namespace IngameScript
             GTSystem.GetBlocksOfType<IMyGasTank>(myOxygenTanks, tank => tank.DetailedInfo.Contains("Oxygen"));
             GTSystem.GetBlocksOfType<IMyGasTank>(myHydrogenTanks, tank => tank.DetailedInfo.Contains("Hydrogen") && 
                                                                          (tank.CustomName == ST || tank.CustomName == BT));
+            if(myHydrogenTanks.Count < 1)
+            {
+                Echo("Critical Error: \n" + "Hydrogen tanks " + ST + " or " + BT + "not found.");
+                return;
+            }
+
             GTSystem.GetBlocksOfType<IMyShipConnector>(myConnectors);
             GTSystem.GetBlocksOfType<IMyCargoContainer>(myCargoContainers);
 
@@ -273,15 +299,41 @@ namespace IngameScript
         private void UpdatePrice(int newPrice)
         {
             this._PRICE = (double)newPrice;
+            Echo("Price updated to " + _PRICE.ToString() + " Cr");
         }
 
 
-
+           /// <summary>
+           /// Changes processing fee
+           /// </summary>
+           /// <param name="newFee"></param>
         private void UpdateProcessingFee(decimal newFee)
         {
             this.processingFee = newFee;
+            string visualPf;
+            //determine what kind of format was used
+            if (processingFee > 0 && processingFee < 1)
+            {
+                visualPf = (processingFee * 100).ToString();
+            }
+            else { visualPf = processingFee.ToString(); }
+
+            Echo("Processing fee updated to " + visualPf + "%"); 
         }
 
+        private void GetPriceSummary()
+        {
+            string visualPf;
+            //determine what kind of format was used
+            if (processingFee > 0 && processingFee < 1)
+            {
+                visualPf = (processingFee * 100).ToString();
+            }
+            else { visualPf = processingFee.ToString(); }
+
+            Echo("Price: " + _PRICE.ToString() + " Cr");
+            Echo("Processing fee: " + visualPf + "%");
+        }
 
         /// <summary>
         /// Method to set the system in Passive mode 
