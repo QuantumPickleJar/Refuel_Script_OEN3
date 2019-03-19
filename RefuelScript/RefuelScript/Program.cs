@@ -142,63 +142,19 @@ namespace IngameScript
                 Echo(hydrogenTank.Name + " stockpiling off." + "\n");
 
             }
+
             Echo("All Hydrogen tanks set to no stockpile.");
+            
+            
 
             if (argument == "check")
             {
                 //                EchoNumberCreditsInPaymentDEBUG();
-                //cargoBankBox = one we're moving TO 
-                //cargoTransBox = one we're taking FROM 
-                //use TRANS box to "receive" the credits 
-                GTSystem.GetBlocksOfType<IMyCargoContainer>(myCargoContainers, block => block.CustomName.EndsWith(TRANS));
-                if (myCargoContainers.Count < 1)
-                {
-                    Echo("No container matching TRANS found");
-                    Echo("(TRANS) = " + TRANS);
-                }
-                Echo("myCargoContainer =: " + myCargoContainers[0].CustomName);
-                IMyInventory invTrans = myCargoContainers[0].GetInventory(0);
-
-
-                //get the FROM 
-                GTSystem.GetBlocksOfType<IMyCargoContainer>(myCargoContainers, block => block.CustomName.EndsWith(BANK));
-                Echo("Begin test:");
-                
-                //set the inventory of the transaction cargo 
-                List<MyInventoryItem> itemlistTrans = new List<MyInventoryItem>();
-
-                //get complete list of items from the transaction cargo regardless of item properties 
-                invTrans.GetItems(itemlistTrans, null);
-                Echo("Retrieved TRANS inv");
-
-                foreach (var item in itemlistTrans)
-                {
-                    Echo("Item " + item.ToString());
-                }
-
-                //string itemName = decodeItemName(drop);
-                //Echo(
-
-                //for (int i = invTrans.ItemCount -1; i >= 0 ; i--)
-                //{
-                //    invTrans[0].Content.SubtypeId.ToString();
-                //    //string itemName =
-                //}
-
-
-                //foreach (IMyInventoryItem item in invTrans.)
-                //{
-                //    List<MyInventoryItem> myItems = new List<MyInventoryItem>();
-                //    Echo("From = " + invTrans);
-
-
-                //    Echo("Contains: " +
-                //        //invTrans.GetItems(myItems, item => item.Type = MyInventoryItem.;
-                //                       invTrans[     );
-                //}
-
-
+                CheckForCredits();
             }
+
+
+
 
             setup = true;  //is this supposed to be an indicator that the setup ran successfully?  if so, we should rename this. 
 
@@ -213,53 +169,81 @@ namespace IngameScript
 
         }
 
+        private void CheckForCredits()
+        {
+            //cargoBankBox = one we're moving TO 
+            //cargoTransBox = one we're taking FROM 
+            //use TRANS box to "receive" the credits 
+            GTSystem.GetBlocksOfType<IMyCargoContainer>(myCargoContainers, block => block.CustomName.EndsWith(TRANS));
+            if (myCargoContainers.Count < 1)
+            {
+                Echo("No container matching TRANS found");
+                Echo("(TRANS) = " + TRANS);
+            }
+            Echo("myCargoContainer =: " + myCargoContainers[0].CustomName);
+            IMyInventory invTrans = myCargoContainers[0].GetInventory(0);
+
+
+            //get the FROM 
+            GTSystem.GetBlocksOfType<IMyCargoContainer>(myCargoContainers, block => block.CustomName.EndsWith(BANK));
+            Echo("Begin test:");
+
+            //set the inventory of the transaction cargo 
+            List<MyInventoryItem> itemlistTrans = new List<MyInventoryItem>();
+
+            //get complete list of items from the transaction cargo regardless of item properties 
+            invTrans.GetItems(itemlistTrans, null);
+            Echo("Retrieved TRANS inv");
+
+            foreach (var item in itemlistTrans)
+            {
+                //Echo("Item " + item.ToString());
+                Echo("Item SubType: " + item.Type.SubtypeId);
+            }
+        }
+
 
         /// <summary>
-        /// DEBUG METHOD: checks the number of credits in the PaymentBox and outputs it to the PB display.
+        /// starts/resets a counter to 0 and counts the number of credits in the inventory of a cargo container of a certain name
         /// </summary>
-        private void EchoNumberCreditsInPaymentDEBUG()
+        /// <returns></returns>
+        private int GetNumberOfCredits(string name)
         {
-            //IMyInventory invPayment = cargoPaymentBox.GetInventory();
-            //invItemList = invPayment.
-            //List<MyInventoryItem> paymentItems = invPayment.GetItems(invItemList);
-            
-            Echo("number of credits: " + CntInInv("Credit", cargoPaymentBox.GetInventory()));
-
-        }
-
-
-        public String decodeItemName(String name, String typeId)
-        {
-            if (typeId.EndsWith("_Ingot"))
+            int numCredits = 0;
+            //cargoBankBox = one we're moving TO 
+            //cargoTransBox = one we're taking FROM 
+            //use TRANS box to "receive" the credits 
+            GTSystem.GetBlocksOfType<IMyCargoContainer>(myCargoContainers, block => block.CustomName.EndsWith(name));
+            if (myCargoContainers.Count < 1)
             {
-                if (name.Equals("Credit"))
-                {
-                    return name; 
-                }
+                Echo("No container matching TRANS found");
+                Echo("(TRANS) = " + TRANS);
             }
-            return "no match: " + name;
+            Echo("myCargoContainer =: " + myCargoContainers[0].CustomName);
+            IMyInventory invTrans = myCargoContainers[0].GetInventory(0);
+
+
+            //get the FROM 
+            GTSystem.GetBlocksOfType<IMyCargoContainer>(myCargoContainers, block => block.CustomName.EndsWith(BANK));
+            Echo("Begin test:");
+
+            //set the inventory of the transaction cargo 
+            List<MyInventoryItem> itemlistTrans = new List<MyInventoryItem>();
+
+            //get complete list of items from the transaction cargo regardless of item properties 
+            invTrans.GetItems(itemlistTrans, null);
+            Echo("Retrieved TRANS inv");
+
+
+            foreach (var item in itemlistTrans)
+            {
+                //Echo("Item " + item.ToString());
+                Echo("Item SubType: " + item.Type.SubtypeId);
+            }
         }
+        
 
-        //public void CheckCredits()//-------------------------------------------------------------------------------------------
-        //{
-        //    //The Cargo Holders
-        //    IMyInventory invCredits = cargoCredits.GetInventory(0);
-        //    //The Cargo Inventory
-        //    List<MyInventoryItem> itemsCredits = new List<MyInventoryItem>();
-        //    (cargoCredits).GetInventory(0).GetItems(itemsCredits);
-
-        //    creditsInCargo = 0;
-
-        //    for (int j = itemsCredits.Count - 1; j >= 0; j--)
-        //    {
-        //        string itemName = decodeItemName(itemsCredits[j].Type.SubtypeId.ToString(), itemsCredits[j].Type.TypeId.ToString());
-        //        string amt = amountFormatter((float)itemsCredits[j].Amount, itemsCredits[j].Type.TypeId.ToString());
-        //        if (itemName == ITEM_CREDIT)
-        //        {
-        //            creditsInCargo += (int.Parse(amt));
-        //        }
-        //    }
-        //}
+        
 
         //================================================================//
         /*                      NON-REQUIRED METHODS                      */
