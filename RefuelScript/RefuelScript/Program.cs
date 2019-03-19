@@ -17,6 +17,11 @@ using VRageMath;
 
 namespace IngameScript
 {
+    public enum ScriptState
+    {
+        Passive = 0, Prime = 1, Sale = 2
+    }
+
     //DO NOT RENAME
     partial class Program : MyGridProgram
     {
@@ -29,7 +34,7 @@ namespace IngameScript
         public const string SO = "[Small Outlet]"; // NAME OF SMALL INLET CONNECTOR Small Fuel Tank Outlet
         public const string BT = "[Big Tank]";  // NAME OF LARGE HYD SALE TANK
         public const string ST = "[Small Tank]"; // NAME OF SMALL HYD SALE TANK
-        public const string PT = "[PRIME TANK]"; // NAME OF PRIME TANK
+        public const string RT = "[Refill Tank]"; // Name of tank used to refill the other tanks post-transaction;
         public const string SFI = "[Small Fuel Inlet]"; // Name of Small Fuel Port Inlet Connector
         public const string LFI = "[Large Fuel Inlet]"; // Name of Large Fuel Port Inlet Connector
         public const string LCDDEBUG = "LCD [DEBUG]";
@@ -67,6 +72,8 @@ namespace IngameScript
          *          determined by when tank reaches 0% OR Tank > 0% & Timer reach zero.
          *          
          *          (capacity == 0 || capacity >= 0 && 'timer elapsed')
+         *          
+         *          @Braelok - the program should enter the PASSIVE state once the above condition is true, correct?
          */
             List<IMyGasTank> myTanks = new List<IMyGasTank>();
             List<IMyGasTank> myOxygenTanks= new List<IMyGasTank>();
@@ -76,14 +83,17 @@ namespace IngameScript
 
 
         //publicly declare variables 
-        
+        DateTime lastRuntime = DateTime.Now;
+        //int execCounter = 1;
+        bool firstRun = true;
 
         public IMyGridTerminalSystem GTSystem;
-        public IMyCubeGrid Grid;
 
         public IMyGasTank tankSmall;
         public IMyGasTank tankBig;
+        public IMyGasTank tankRefill;
         
+        public IMyShipConnector conMainLine;
         public IMyShipConnector conSmallFuelTankOutlet;
         public IMyShipConnector conLargeFuelTankOutlet;
         public IMyShipConnector conSmallFuelPortInlet;
@@ -99,14 +109,14 @@ namespace IngameScript
         public IMyTextPanel LCDSmFuel;
         public IMyTextPanel LCDLgFuel;
 
-
+        private ScriptState currentState = ScriptState.Passive;
         public Program()
         {
 
             setupComplete = false;
             //Instantiate variables 
             SetBlocks();
-
+            Runtime.UpdateFrequency = UpdateFrequency.Update100;
             //add runtime stuff here later - VTM
         }
 
@@ -118,13 +128,28 @@ namespace IngameScript
         /// <param name="updateSource"></param>
         public void Main(string argument, UpdateType updateSource)
         {
+            if ((DateTime.Now - lastRuntime).TotalMilliseconds < 200)
+            {
+                return;
+            }
+            else
+            {
+                lastRuntime = DateTime.Now;
+            }
+            if(firstRun)
+            {
+                Echo("initializing...");
+                Setup();
+                firstRun = false;
+            }
+            SetBlocks();
+            currentState = ScriptState.Passive;
             //TODO: add case: switch or if() structure to determine which state we need to be in
             //Can also be converted to a method 
 
             //DetermineState();
 
             //setup 
-            Setup();
 
             //======================= ARGUMENT HANDLING ==========================//
 
@@ -133,18 +158,29 @@ namespace IngameScript
             {
                 //print # of credits in [Transaction]
                 case "check":
-                    Echo("[Transaction]: " + GetNumberOfCredits(TRANS).ToString());
+                    WriteLCD("[Transaction]: " + GetNumberOfCredits(TRANS).ToString());
                     return;
 
                 //print # credits in [Bank]
                 case "vault":
-                    Echo("[Bank]: " + GetNumberOfCredits(BANK).ToString());
+                    WriteLCD("[Bank]: " + GetNumberOfCredits(BANK).ToString());
                     return;
 
                 //print current price and processing fee
                 case "prices":
                     GetPriceSummary();
                     break;
+
+                //force reboot 
+                case "reset":
+                    firstRun = true;
+                    return;
+
+                //force enter passive state
+                case "passive":
+                    SetPassiveState();
+                    break;
+
                 default:
                     break;
             }
@@ -183,6 +219,8 @@ namespace IngameScript
         /// </summary>
         private void Setup()
         {
+            
+
             foreach (IMyShipConnector connector in myConnectors)
             {
                 connector.Disconnect();
@@ -190,18 +228,22 @@ namespace IngameScript
 
             }
             //Echo("All connectors unlocked.");
-
-
+            
             //Set every Hydrogen and Oxygen tank's Stockpiling to Off
-            foreach (IMyGasTank tank in myTanks)
+            for (int i = 0; i < myTanks.Count; i++)
             {
-                Echo("Name: " + tank.CustomName + "\n" +
-                    "Dinfo: " + tank.DetailedInfo + "\n" 
-                    /*+"Cinfo: " + tank.CustomInfo*/);
+                IMyGasTank tank = myTanks[i];
 
+                //Echo("Name: " + tank.CustomName + "\n" + "Dinfo: " + tank.DetailedInfo);
+                bool doAppend;
                 tank.Stockpile = false;
+                if (i == 0) { doAppend = false; } else { doAppend = true; }
+                WriteLCD(tank.CustomName + " stockpile set to off.\n",doAppend);           
             }
+            
             setupComplete = true;
+            Echo("Setup complete");
+            WriteLCD("Setup complete");
             //Echo("All Hydrogen tanks set to no stockpile.");
         }
 
@@ -218,6 +260,7 @@ namespace IngameScript
             {
                 //if it doesn't exist, output to Programming Block
                 Echo("Container " + name + " not found.");
+                
                 return -1;
             }
             //Retrieve the inventory of the container
@@ -255,6 +298,7 @@ namespace IngameScript
             if(myHydrogenTanks.Count < 1)
             {
                 Echo("Critical Error: \n" + "Hydrogen tanks " + ST + " or " + BT + "not found.");
+                WriteLCD("Critical Error: \n" + "Hydrogen tanks " + ST + " or " + BT + "not found.",true);
                 return;
             }
 
@@ -263,10 +307,12 @@ namespace IngameScript
 
             //Hydrogen tanks
             tankBig = GTSystem.GetBlockWithName(BT) as IMyGasTank;      //[Big Tank]
-            tankSmall = GTSystem.GetBlockWithName(ST) as IMyGasTank;    // [SMALL TANK]
+            tankSmall = GTSystem.GetBlockWithName(ST) as IMyGasTank;    // [Small Tank]
+            tankRefill = GTSystem.GetBlockWithName(RT) as IMyGasTank;    // [Refill Tank]
 
 
             //Connectors 
+            conSmallFuelTankInlet = GTSystem.GetBlockWithName(ML) as IMyShipConnector;  // Small Fuel Tank Inlet
             conSmallFuelTankInlet = GTSystem.GetBlockWithName(SI) as IMyShipConnector;  // Small Fuel Tank Inlet
             conLargeFuelTankInlet = GTSystem.GetBlockWithName(BI) as IMyShipConnector;  // Large Fuel Tank Inlet 
             conSmallFuelTankOutlet = GTSystem.GetBlockWithName(SO) as IMyShipConnector; // Small Fuel Tank Outlet
@@ -277,14 +323,16 @@ namespace IngameScript
             {
                 conCustomerFuelPort = GridTerminalSystem.GetBlockWithName("Connector [Fuel Port Inlet]") as IMyShipConnector;
                 //Cargo containers
-                cargoBankBox = GTSystem.GetBlockWithName("Bank Box") as IMyCargoContainer;
-                cargoPaymentBox = GTSystem.GetBlockWithName("Payment Box") as IMyCargoContainer;
+                cargoBankBox = GTSystem.GetBlockWithName(BANK) as IMyCargoContainer;
+                cargoPaymentBox = GTSystem.GetBlockWithName(TRANS) as IMyCargoContainer;
 
                 //debug, fueling, primetankstatus
 
-                debugLCD = GTSystem.GetBlockWithName("debug LCD") as IMyTextPanel;
-                LCDSmFuel = GTSystem.GetBlockWithName("S fuel LCD") as IMyTextPanel;          //LCD Small Fuel
-                LCDLgFuel = GTSystem.GetBlockWithName("L fuel LCD") as IMyTextPanel;          // LCD Large Fuel
+                //LCD Screens
+                debugLCD = GTSystem.GetBlockWithName(LCDDEBUG) as IMyTextPanel;
+               
+                //LCDSmFuel = GTSystem.GetBlockWithName(LCDSS) as IMyTextPanel;          //LCD Small Fuel
+                //LCDLgFuel = GTSystem.GetBlockWithName(LCDLS) as IMyTextPanel;          // LCD Large Fuel
             }
             catch (Exception e)
             {
@@ -299,7 +347,9 @@ namespace IngameScript
         private void UpdatePrice(int newPrice)
         {
             this._PRICE = (double)newPrice;
-            Echo("Price updated to " + _PRICE.ToString() + " Cr");
+            //Echo("Price updated to " + _PRICE.ToString() + " Cr");
+            WriteLCD(" Price updated to " + _PRICE.ToString() + " Cr");
+            
         }
 
 
@@ -318,7 +368,8 @@ namespace IngameScript
             }
             else { visualPf = processingFee.ToString(); }
 
-            Echo("Processing fee updated to " + visualPf + "%"); 
+            //Echo("Processing fee updated to " + visualPf + "%"); 
+            WriteLCD(" Processing fee updated to " + visualPf + "%"); 
         }
 
         private void GetPriceSummary()
@@ -331,8 +382,8 @@ namespace IngameScript
             }
             else { visualPf = processingFee.ToString(); }
 
-            Echo("Price: " + _PRICE.ToString() + " Cr");
-            Echo("Processing fee: " + visualPf + "%");
+            WriteLCD("Price: " + _PRICE.ToString() + " Cr\n");
+            WriteLCD("Processing fee: " + visualPf + "%",true);
         }
 
         /// <summary>
@@ -359,11 +410,55 @@ namespace IngameScript
              *      passive      ->         Prime             ->         sale
              *     refill pump        ready for transaction         emptying pump          
              */
+
+            //set state
+            currentState = ScriptState.Passive;
+            //conSmallFuelTankOutlet.Enabled = false;
+            //conSmallFuelPortInlet.Enabled = true; //@Braelok need confirmation that FuelPortInlet is correct (as opposed to FuelTankInlet)
+            //conMainLine.Enabled = true;
+            //conMainLine.Connect();
+            
+            //fill up tank for prep to sell
+            WriteLCD("Attempting to fill [Big Tank]...");
+            if (tankBig.FilledRatio != 1 && tankRefill.FilledRatio != 0)
+                 
+
+            WriteLCD("[Big Tank] Filled. engaging connectors...", true);
+
+            //tankBig.Stockpile = false;
+            //conSmallFuelPortInlet.Enabled = false;
+
+            //transition to prime state
+            //SetPrimeState();
+
+            
         }
+
+
+        private void FillBigTank()
+        {
+            //set the big tank to stockpile 
+            tankBig.Stockpile = true;
+            tankSmall.Stockpile = false;
+
+            //display progress
+            WriteLCD("[Big Tank] Fill: " + tankBig.FilledRatio * 100 + "%");
+
+            //if it's not full, call this method again
+            if (tankBig.FilledRatio != 1 && tankRefill.FilledRatio != 0)
+                FillBigTank();
+            else if(tankBig.FilledRatio != 1 && tankRefill.FilledRatio == 0)
+            {
+                WriteLCD("WARNING! No fuel left in refill tank!", true);
+            }
         
+           
+            else return;
+        }
+
         //DO NOT AUTOMATE STOCKPILING OF CUSTOMER
 
-        public void PrimeTanks()
+        public void SetPrimeState()
         {
 
             /**
@@ -388,6 +483,17 @@ namespace IngameScript
              *      - display to customer how much is left to pay,
              *      
              */
+
+            
+
+
+            //display price
+
+
+            
+            //check if the credits in [Transaction] are enough
+            
+
         }
 
 
@@ -422,7 +528,36 @@ namespace IngameScript
 
              */
         }
-       
+        
+        /// <summary>
+        /// Writes a string to LCD [DEBUG]
+        /// </summary>
+        /// <param name="text">what to display</param>
+        /// <param name="append">true if previous contents of screen shouldn't be cleared, otherwise false</param>
+        public void WriteLCD(string text, bool append = false)
+        {
+            //write header 
+           
+            // STATE: PASSIVE   [BT]: 100%  [BANK]: 1500 Cr
+            string header = "STATE: " + currentState.ToString() + "   " +
+                            "[BT]: " + tankBig.FilledRatio * 100 + "%   " +
+                            "[Bank]: " + GetNumberOfCredits(BANK) + " CR\n" +
+                            "====================================================";
+
+            debugLCD.WritePublicText(header, false);
+            
+            //get font size
+            float fontSize = debugLCD.FontSize;
+            int charsperLine = 26;
+            if (debugLCD.BlockDefinition.SubtypeName.Contains("Wide")) charsperLine = 52;
+
+            //print text to public display 
+            debugLCD.WritePublicText(text,append);
+            debugLCD.ShowPublicTextOnScreen();
+
+
+        }
+
         /// <summary>
         /// Echoes text to an LCD by name
         /// </summary>
